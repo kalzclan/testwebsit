@@ -1,11 +1,19 @@
-
-
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Habesha Games</title>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let isRegistered = localStorage.getItem("registered");
+            if (!isRegistered) {
+                window.location.href = "register.html"; // Redirect to registration page
+            }
+        });
+    </script>
 <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -42,7 +50,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        h1 {font: ;
+        h1 {
             margin-top: 20px;
             font-size: 24px;
             color: #333;
