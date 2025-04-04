@@ -1,24 +1,42 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Habesha Games</title>
-
-
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js"></script>
+    
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            let isRegistered = localStorage.getItem("registered");
-            if (!isRegistered) {
-                window.location.href = "register.html"; // Redirect to registration page
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Check if user is registered
+        window.onload = function () {
+            const registered = localStorage.getItem("registered");
+            if (!registered) {
+                window.location.href = "register.html";
+            } else {
+                document.getElementById("welcome-message").innerText = 
+                    "Welcome, " + localStorage.getItem("firstName") + "!";
             }
-        });
+        };
     </script>
-<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
-
+    
     <style>
         * {
             margin: 0;
@@ -37,30 +55,30 @@
         }
 
         .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .logo {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: url('logo.png') no-repeat center center/cover;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
         }
 
         h1 {
-            margin-top: 20px;
-            font-size: 24px;
+            margin-bottom: 10px;
             color: #333;
+        }
+
+        img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo"></div>
-        <h1>Habesha Games</h1>
+        <img src="logo.png" alt="Habesha Games Logo">
+        <h1 id="welcome-message">Loading...</h1>
     </div>
 </body>
 </html>
