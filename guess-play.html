@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Guess Number Play - HABESHA GAMES</title>
+  <style>
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+      color: white;
+      text-align: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #00ffcc;
+      margin-bottom: 30px;
+    }
+
+    .game-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+    }
+
+    input {
+      font-size: 18px;
+      padding: 12px;
+      margin: 10px;
+      width: 60px;
+      text-align: center;
+      border: 1px solid #00ffcc;
+      border-radius: 10px;
+      background: #1a1a2e;
+      color: white;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 16px;
+      background-color: #00ffcc;
+      color: black;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #00e6b8;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Guess Number Game</h1>
+
+  <div class="game-box">
+    <p>Enter your 4-digit guess (no 0s, no repeats):</p>
+    <input id="g1" maxlength="1" type="number" min="1" max="9">
+    <input id="g2" maxlength="1" type="number" min="1" max="9">
+    <input id="g3" maxlength="1" type="number" min="1" max="9">
+    <input id="g4" maxlength="1" type="number" min="1" max="9">
+    <br>
+    <button onclick="submitGuess()">Submit Guess</button>
+    <div id="result"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
+      authDomain: "habeshagames-1f999.firebaseapp.com",
+      projectId: "habeshagames-1f999",
+      storageBucket: "habeshagames-1f999.appspot.com",
+      messagingSenderId: "919693990773",
+      appId: "1:919693990773:web:f32664a1b944b38101113c",
+      measurementId: "G-G5C67RMJDY"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get("room");
+
+    let secret = [];
+
+    async function fetchSecret() {
+      const gameRef = doc(db, "games", roomId);
+      const snap = await getDoc(gameRef);
+      if (snap.exists()) {
+        secret = snap.data().secret;
+        console.log("Secret number:", secret);
+      } else {
+        document.getElementById("result").innerText = "Game not found.";
+      }
+    }
+
+    fetchSecret();
+
+    window.submitGuess = function () {
+      const guess = [
+        parseInt(document.getElementById("g1").value),
+        parseInt(document.getElementById("g2").value),
+        parseInt(document.getElementById("g3").value),
+        parseInt(document.getElementById("g4").value)
+      ];
+
+      if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9)) {
+        document.getElementById("result").innerText = "Invalid guess. Use 1-9 without repeats.";
+        return;
+      }
+
+      let correctPosition = 0;
+      let correctNumber = 0;
+
+      for (let i = 0; i < 4; i++) {
+        if (guess[i] === secret[i]) {
+          correctPosition++;
+        } else if (secret.includes(guess[i])) {
+          correctNumber++;
+        }
+      }
+
+      document.getElementById("result").innerText =
+        `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
+    }
+  </script>
+</body>
+</html>
