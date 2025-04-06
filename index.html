@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Firebase Telegram Auth</title>
+  <title>Telegram Auto Register</title>
 </head>
 <body>
-  <h2>Telegram Login with Firebase Check</h2>
+  <h2>Login with Telegram</h2>
 
   <!-- Telegram Login Button -->
   <script async src="https://telegram.org/js/telegram-widget.js?7"
-          data-telegram-login="kbabenibot"  <!-- ✅ your bot username -->
+          data-telegram-login="kbabenibot"
           data-size="large"
           data-userpic="false"
-          data-request-access="write"
-          data-onauth="onTelegramAuth(user)"></script>
+          data-request-access="write">
+  </script>
 
   <script type="module">
-    // Firebase SDK imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
@@ -29,34 +28,38 @@
       measurementId: "G-G5C67RMJDY"
     };
 
-    // Init Firebase
     const app = initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
 
-    // Telegram login callback
-    window.onTelegramAuth = async function(user) {
-      const telegramId = user.id.toString();
-      const username = user.username;
+    // Read Telegram query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const telegramId = urlParams.get("id");
+    const username = urlParams.get("username");
+    const firstName = urlParams.get("first_name");
+    const lastName = urlParams.get("last_name");
 
-      try {
-        const userRef = doc(firestore, "users", telegramId);
-        const userSnap = await getDoc(userRef);
+    if (telegramId && username) {
+      const userRef = doc(firestore, "users", telegramId);
 
-        if (userSnap.exists()) {
-          // ✅ User found → redirect to home
+      getDoc(userRef).then(async (docSnap) => {
+        if (docSnap.exists()) {
+          // ✅ Already registered → go to home
           window.location.href = "/home.html";
         } else {
-          // ❌ User not found → redirect to register with query params
-          const params = new URLSearchParams({
-            username: username || "",
-            id: telegramId
-          }).toString();
-          window.location.href = "/register.html?" + params;
+          // 🆕 New user → save to Firestore then redirect
+          await setDoc(userRef, {
+            telegramId,
+            username,
+            firstName,
+            lastName,
+            createdAt: new Date().toISOString()
+          });
+          window.location.href = "/home.html";
         }
-      } catch (err) {
-        console.error("Error checking user:", err);
-      }
-    };
+      }).catch(err => {
+        console.error("Error checking/saving user:", err);
+      });
+    }
   </script>
 </body>
 </html>
