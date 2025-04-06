@@ -1,118 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Habesha Games</title>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js"></script>
-    
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
-            authDomain: "habeshagames-1f999.firebaseapp.com",
-            projectId: "habeshagames-1f999",
-            storageBucket: "habeshagames-1f999.firebasestorage.app",
-            messagingSenderId: "919693990773",
-            appId: "1:919693990773:web:03bd597968bfe32001113c"
-        };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-    </script>
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-            text-align: center;
-        }
-
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 400px;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-    </style>
+  <title>Register Telegram User</title>
 </head>
 <body>
-    <div class="container">
-        <h2>Register for Habesha Games</h2>
-        
-        <!-- Telegram Login Button -->
-        <script async src="https://telegram.org/js/telegram-widget.js?7"
-            data-telegram-login="@kbabenibot"
-            data-size="large"
-            data-auth-url="javascript:registerUser()"
-            data-request-access="write">
-        </script>
-    </div>
+  <h2>Register New User</h2>
+  
+  <form id="registerForm">
+    <label>Telegram ID:</label><br>
+    <input type="text" id="telegramId" readonly><br><br>
 
-    <script>
-        function registerUser() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const userId = urlParams.get("id");
-            const firstName = urlParams.get("first_name");
-            const username = urlParams.get("username") || "Unknown";
+    <label>Telegram Username:</label><br>
+    <input type="text" id="telegramUsername"><br><br>
 
-            if (userId) {
-                // Save to Firebase
-                db.collection("users").doc(userId).set({
-                    firstName: firstName,
-                    username: username,
-                    registeredAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    // Store in localStorage for session tracking
-                    localStorage.setItem("registered", "true");
-                    localStorage.setItem("userId", userId);
-                    localStorage.setItem("firstName", firstName);
-                    localStorage.setItem("username", username);
-                    window.location.href = "index.html"; // Redirect to home page
-                }).catch(error => {
-                    alert("Error saving data: " + error);
-                });
-            } else {
-                alert("User data not found. Please access this page from Telegram.");
-            }
-        }
-    </script>
+    <label>Full Name:</label><br>
+    <input type="text" id="fullName" placeholder="Enter your full name"><br><br>
+
+    <button type="submit">Register</button>
+  </form>
+
+  <script type="module">
+    // Firebase SDK imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
+      authDomain: "habeshagames-1f999.firebaseapp.com",
+      projectId: "habeshagames-1f999",
+      storageBucket: "habeshagames-1f999.firebasestorage.app",
+      messagingSenderId: "919693990773",
+      appId: "1:919693990773:web:f32664a1b944b38101113c",
+      measurementId: "G-G5C67RMJDY"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const firestore = getFirestore(app);
+
+    // Read query parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const telegramId = urlParams.get("id") || "";
+    const telegramUsername = urlParams.get("username") || "";
+
+    // Pre-fill form
+    document.getElementById("telegramId").value = telegramId;
+    document.getElementById("telegramUsername").value = telegramUsername;
+
+    // Form submit handler
+    document.getElementById("registerForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const fullName = document.getElementById("fullName").value;
+
+      try {
+        await setDoc(doc(firestore, "users", telegramId), {
+          telegramId,
+          telegramUsername,
+          fullName
+        });
+
+        alert("Registration successful!");
+        window.location.href = "/home.html";
+      } catch (err) {
+        console.error("Error saving user:", err);
+        alert("Failed to register user.");
+      }
+    });
+  </script>
 </body>
 </html>
