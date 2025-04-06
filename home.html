@@ -1,125 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HABESHA GAMES - Home</title>
   <style>
-    :root {
-      --bg-color: #000;
-      --text-color: #fff;
-      --card-color: #1e1e1e;
-      --highlight: #00ff99;
-      --danger: #ff4444;
-    }
-
-    body.light {
-      --bg-color: #f3f3f3;
-      --text-color: #111;
-      --card-color: #ffffff;
-    }
-
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+      color: white;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
       min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
     }
-
-    header {
-      background-color: var(--highlight);
-      color: #000;
-      text-align: center;
-      padding: 20px;
-      font-size: 24px;
-      font-weight: bold;
-      position: relative;
+    h1 {
+      color: #00ffcc;
+      margin-bottom: 10px;
     }
-
-    .toggle-theme {
-      position: absolute;
-      right: 20px;
-      top: 20px;
-      background: none;
-      border: none;
+    #balance {
       font-size: 20px;
-      cursor: pointer;
+      margin-bottom: 30px;
     }
-
-    .balance {
-      background: var(--card-color);
-      padding: 15px;
-      text-align: center;
-      font-size: 18px;
-      color: var(--highlight);
-      border-bottom: 1px solid #222;
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+      max-width: 300px;
     }
-
-    .games {
-      flex: 1;
-      padding: 20px;
-    }
-
-    .games h3 {
-      margin-bottom: 15px;
-    }
-
-    .game-card {
-      background: var(--card-color);
-      margin-bottom: 15px;
+    .game-list a {
+      text-decoration: none;
+      background-color: #1a1a2e;
+      border: 1px solid #00ffcc;
       padding: 15px;
       border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0, 255, 128, 0.1);
-      transform: scale(1);
-      transition: transform 0.2s ease, box-shadow 0.3s ease;
-    }
-
-    .game-card:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(0, 255, 128, 0.3);
-      cursor: pointer;
-    }
-
-    .logout-btn {
-      background: var(--danger);
       color: white;
-      padding: 15px;
-      font-size: 16px;
-      border: none;
-      width: 100%;
-      border-radius: 0;
-      cursor: pointer;
+      text-align: center;
+      font-size: 18px;
       transition: background 0.3s;
     }
-
+    .game-list a:hover {
+      background-color: #00ffcc;
+      color: black;
+    }
+    .logout-btn {
+      margin-top: 40px;
+      padding: 10px 25px;
+      font-size: 16px;
+      background-color: #ff4c4c;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
     .logout-btn:hover {
-      background: #cc3333;
+      background-color: #e60000;
     }
   </style>
 </head>
 <body>
-  <header>
-    HABESHA GAMES
-    <button class="toggle-theme" onclick="toggleTheme()">🌓</button>
-  </header>
-  <div class="balance">Balance: <span id="balance">Loading...</span> birr</div>
+  <h1>Welcome to HABESHA GAMES</h1>
+  <div id="balance">Balance: 0</div>
 
-  <div class="games">
-    <h3>Available Games 🎮</h3>
-    <div class="game-card">♟️ Chess</div>
-    <div class="game-card">🔢 Guess Number Order</div>
-    <div class="game-card">🎲 LUDO</div>
+  <div class="game-list">
+    <a href="/guess-number.html">Guess Number Order</a>
+    <a href="#">Chess</a>
+    <a href="#">LUDO</a>
   </div>
 
   <button class="logout-btn" onclick="logout()">Logout</button>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
@@ -132,43 +86,33 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const firestore = getFirestore(app);
+    const db = getFirestore(app);
 
-    const userId = new URLSearchParams(window.location.search).get("id");
-    const balanceEl = document.getElementById("balance");
+    async function fetchBalance(userId) {
+      const userRef = doc(db, "users", userId);
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+        document.getElementById("balance").innerText = `Balance: ${docSnap.data().balance}`;
+      } else {
+        alert("User not found.");
+        logout();
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("userId");
+      window.location.href = "/index.html";
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('id') || localStorage.getItem("userId");
 
     if (!userId) {
-      window.location.href = "/";
+      window.location.href = "/index.html";
+    } else {
+      localStorage.setItem("userId", userId);
+      fetchBalance(userId);
     }
-
-    const userRef = doc(firestore, "users", userId);
-
-    // Live balance listener
-    onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        balanceEl.textContent = data.balance ?? 0;
-      } else {
-        balanceEl.textContent = "Error";
-      }
-    });
-
-    window.logout = function () {
-      localStorage.removeItem("userId");
-      window.location.href = "/";
-    };
-
-    const body = document.body;
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme === "light") {
-      body.classList.add("light");
-    }
-
-    window.toggleTheme = function () {
-      body.classList.toggle("light");
-      const isLight = body.classList.contains("light");
-      localStorage.setItem("theme", isLight ? "light" : "dark");
-    };
   </script>
 </body>
 </html>
