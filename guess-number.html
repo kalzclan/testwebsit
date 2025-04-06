@@ -1,134 +1,105 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>HABESHA GAMES</title>
+  <title>Guess Number - HABESHA GAMES</title>
   <style>
     body {
       font-family: 'Orbitron', sans-serif;
       background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      text-align: center;
+      padding: 40px 20px;
       min-height: 100vh;
     }
-    h2 {
-      font-size: 2rem;
+
+    h1 {
       color: #00ffcc;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
-    #register-form {
+
+    .game-box {
       background: rgba(255, 255, 255, 0.05);
-      padding: 20px;
       border-radius: 16px;
+      padding: 30px;
+      max-width: 400px;
+      margin: auto;
       box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-      text-align: center;
     }
+
     input {
-      padding: 10px;
-      font-size: 16px;
-      width: 250px;
-      margin: 10px 0;
+      font-size: 18px;
+      padding: 12px;
+      width: 60px;
+      margin: 10px;
+      text-align: center;
       border: 1px solid #00ffcc;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #1a1a2e;
       color: white;
     }
+
     button {
-      padding: 12px 20px;
+      margin-top: 20px;
+      padding: 12px 25px;
       font-size: 16px;
-      margin-top: 10px;
       background-color: #00ffcc;
       color: black;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
     }
+
     button:hover {
       background-color: #00e6b8;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    .back {
+      margin-top: 40px;
+      display: inline-block;
+      color: #00ffcc;
+      text-decoration: underline;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h2>Welcome to HABESHA GAMES</h2>
+  <h1>Guess Number Order</h1>
 
-  <!-- Registration form (hidden by default) -->
-  <div id="register-form" style="display: none;">
-    <input type="text" id="username" placeholder="Enter your name" /><br />
-    <input type="text" id="phone" placeholder="Enter your phone number" maxlength="10" /><br />
-    <button onclick="saveData()">Register</button>
+  <div class="game-box">
+    <p>Enter your 4 guesses (1-9, all different):</p>
+    <div>
+      <input type="number" min="1" max="9" id="guess1">
+      <input type="number" min="1" max="9" id="guess2">
+      <input type="number" min="1" max="9" id="guess3">
+      <input type="number" min="1" max="9" id="guess4">
+    </div>
+    <button onclick="checkGuess()">Submit Guess</button>
+    <div id="result"></div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  <div class="back" onclick="goHome()">← Back to Home</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
-      authDomain: "habeshagames-1f999.firebaseapp.com",
-      projectId: "habeshagames-1f999",
-      storageBucket: "habeshagames-1f999.appspot.com",
-      messagingSenderId: "919693990773",
-      appId: "1:919693990773:web:f32664a1b944b38101113c",
-      measurementId: "G-G5C67RMJDY"
-    };
+  <script>
+    const secret = generateSecret();
 
-    const app = initializeApp(firebaseConfig);
-    const firestore = getFirestore(app);
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      const userId = localStorage.getItem("userId");
-      if (userId) {
-        const userRef = doc(firestore, "users", userId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          window.location.href = "/home.html?id=" + userId;
-          return;
-        } else {
-          localStorage.removeItem("userId");
+    function generateSecret() {
+      const numbers = [];
+      while (numbers.length < 4) {
+        const n = Math.floor(Math.random() * 9) + 1;
+        if (!numbers.includes(n)) {
+          numbers.push(n);
         }
       }
-      document.getElementById("register-form").style.display = "block";
-    });
-
-    window.saveData = async function () {
-      const username = document.getElementById("username").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-
-      if (!username || !phone) {
-        alert("Please fill in both name and phone.");
-        return;
-      }
-
-      if (!/^[1-9][0-9]{9}$/.test(phone)) {
-        alert("Please enter a valid 10-digit phone number (not starting with 0).");
-        return;
-      }
-
-      const existingUserRef = doc(firestore, "users", phone);
-      const existingUserSnap = await getDoc(existingUserRef);
-
-      if (existingUserSnap.exists()) {
-        alert("Phone number already registered.");
-        return;
-      }
-
-      try {
-        await setDoc(existingUserRef, {
-          username: username,
-          phone: phone,
-          balance: 0,
-          createdAt: new Date().toISOString()
-        });
-        localStorage.setItem("userId", phone);
-        window.location.href = "/home.html?id=" + phone;
-      } catch (err) {
-        console.error("Error saving user:", err);
-        alert("Failed to save user.");
-      }
+      return numbers;
     }
-  </script>
-</body>
-</html>
+
+    function checkGuess() {
+      const g1 = parseInt(document.getElementById('guess1').value);
+      const g2 = parseInt(document.getElementById('guess2').value);
+      const g3 = parseInt(document.getElementById('guess3').value);
+      const g4 = parseInt(document.getElementBy
