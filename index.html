@@ -1,24 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Firebase Connection</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GambleBot Register</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(145deg, #111, #222);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #register-form {
+      background-color: #1e1e1e;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0, 255, 128, 0.3);
+      width: 90%;
+      max-width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00ff99;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #00ff99;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background: #00cc7a;
+    }
+
+    .error {
+      color: #ff5555;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h2 id="heading">Welcome</h2>
-
-  <!-- Registration form (hidden by default) -->
   <div id="register-form" style="display: none;">
-    <input type="text" id="username" placeholder="Enter your name" /><br />
-    <input type="text" id="phone" placeholder="Enter your phone number" /><br />
+    <h2>GambleBot</h2>
+    <input type="text" id="username" placeholder="Enter your name" />
+    <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" />
     <button onclick="saveData()">Register</button>
+    <div id="error" class="error"></div>
   </div>
 
   <script type="module">
-    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
       authDomain: "habeshagames-1f999.firebaseapp.com",
@@ -29,11 +87,9 @@
       measurementId: "G-G5C67RMJDY"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
 
-    // Check if user is already registered
     window.addEventListener("DOMContentLoaded", async () => {
       const userId = localStorage.getItem("userId");
       if (userId) {
@@ -46,33 +102,41 @@
           localStorage.removeItem("userId");
         }
       }
-      // Show form if not registered
       document.getElementById("register-form").style.display = "block";
     });
 
-    // Save new user data
     window.saveData = async function () {
       const username = document.getElementById("username").value.trim();
       const phone = document.getElementById("phone").value.trim();
+      const errorDiv = document.getElementById("error");
+
+      errorDiv.textContent = "";
 
       if (!username || !phone) {
-        alert("Please fill in both name and phone.");
+        errorDiv.textContent = "Please fill in both name and phone number.";
         return;
       }
 
-      const userId = Date.now().toString(); // use timestamp as unique ID
+      if (!/^\d{10}$/.test(phone)) {
+        errorDiv.textContent = "Phone number must be exactly 10 digits.";
+        return;
+      }
 
       try {
+        const userId = phone;
+
         await setDoc(doc(firestore, "users", userId), {
           username: username,
           phone: phone,
+          balance: 0,
           createdAt: new Date().toISOString()
         });
+
         localStorage.setItem("userId", userId);
         window.location.href = "/home.html?id=" + userId;
       } catch (err) {
         console.error("Error saving user:", err);
-        alert("Failed to save user.");
+        errorDiv.textContent = "Failed to register. Try again.";
       }
     }
   </script>
