@@ -106,22 +106,20 @@
     HABESHA GAMES
     <button class="toggle-theme" onclick="toggleTheme()">🌓</button>
   </header>
-  <div class="balance">Balance: <span id="balance">0</span> birr</div>
+  <div class="balance">Balance: <span id="balance">Loading...</span> birr</div>
 
   <div class="games">
     <h3>Available Games 🎮</h3>
-    <div class="game-card">🎰 Slot Machine</div>
-    <div class="game-card">🃏 Blackjack</div>
-    <div class="game-card">🎯 Lucky Spin</div>
-    <div class="game-card">🎲 Dice Roll</div>
-    <div class="game-card">📈 Coin Flip</div>
+    <div class="game-card">♟️ Chess</div>
+    <div class="game-card">🔢 Guess Number Order</div>
+    <div class="game-card">🎲 LUDO</div>
   </div>
 
   <button class="logout-btn" onclick="logout()">Logout</button>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
@@ -144,36 +142,22 @@
     }
 
     const userRef = doc(firestore, "users", userId);
-    const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists()) {
-      const userData = userSnap.data();
-      const balance = userData.balance ?? 0;
-      animateBalance(balance);
-    } else {
-      balanceEl.textContent = "Error";
-    }
-
-    function animateBalance(balance) {
-      let current = 0;
-      const increment = Math.ceil(balance / 40);
-      const interval = setInterval(() => {
-        current += increment;
-        if (current >= balance) {
-          balanceEl.textContent = balance;
-          clearInterval(interval);
-        } else {
-          balanceEl.textContent = current;
-        }
-      }, 20);
-    }
+    // Live balance listener
+    onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        balanceEl.textContent = data.balance ?? 0;
+      } else {
+        balanceEl.textContent = "Error";
+      }
+    });
 
     window.logout = function () {
       localStorage.removeItem("userId");
       window.location.href = "/";
     };
 
-    // Theme toggle
     const body = document.body;
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme === "light") {
