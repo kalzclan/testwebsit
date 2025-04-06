@@ -1,17 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Welcome Home</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HABESHA GAMES - Home</title>
   <style>
     body {
-      font-family: sans-serif;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(145deg, #000, #1a1a1a);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: #00ff99;
+      color: #000;
       text-align: center;
-      padding-top: 50px;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .balance {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      font-size: 18px;
+      color: #00ff99;
+      border-bottom: 1px solid #222;
+    }
+
+    .games {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .games h3 {
+      margin-bottom: 15px;
+      color: #fff;
+    }
+
+    .game-card {
+      background: #1e1e1e;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 255, 128, 0.2);
+    }
+
+    .game-card:hover {
+      background: #292929;
+      cursor: pointer;
+    }
+
+    .logout-btn {
+      background: #ff4444;
+      color: white;
+      padding: 15px;
+      font-size: 16px;
+      border: none;
+      width: 100%;
+      border-radius: 0;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: #cc3333;
     }
   </style>
 </head>
 <body>
-  <h1>Welcome, <span id="username">Loading...</span>!</h1>
+
+  <header>HABESHA GAMES</header>
+  <div class="balance">Balance: <span id="balance">Loading...</span> birr</div>
+
+  <div class="games">
+    <h3>Available Games 🎲</h3>
+    <div class="game-card">🎰 Slot Machine</div>
+    <div class="game-card">🃏 Blackjack</div>
+    <div class="game-card">🎯 Lucky Spin</div>
+    <div class="game-card">🎲 Dice Roll</div>
+    <div class="game-card">📈 Coin Flip</div>
+  </div>
+
+  <button class="logout-btn" onclick="logout()">Logout</button>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -21,7 +96,7 @@
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
       authDomain: "habeshagames-1f999.firebaseapp.com",
       projectId: "habeshagames-1f999",
-      storageBucket: "habeshagames-1f999.firebasestorage.app",
+      storageBucket: "habeshagames-1f999.appspot.com",
       messagingSenderId: "919693990773",
       appId: "1:919693990773:web:f32664a1b944b38101113c",
       measurementId: "G-G5C67RMJDY"
@@ -30,34 +105,27 @@
     const app = initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
 
-    // Get telegram ID from previous login (URL or sessionStorage)
-    const urlParams = new URLSearchParams(window.location.search);
-    let telegramId = urlParams.get("id");
+    const userId = new URLSearchParams(window.location.search).get("id");
+    const balanceSpan = document.getElementById("balance");
 
-    // Optionally store it for later visits
-    if (telegramId) {
-      sessionStorage.setItem("telegramId", telegramId);
-    } else {
-      telegramId = sessionStorage.getItem("telegramId");
+    if (!userId) {
+      window.location.href = "/";
     }
 
-    if (telegramId) {
-      const userRef = doc(firestore, "users", telegramId);
-      getDoc(userRef).then((docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          document.getElementById("username").textContent =
-            data.firstName || data.username || "Friend";
-        } else {
-          document.getElementById("username").textContent = "Guest";
-        }
-      }).catch((err) => {
-        console.error("Error loading user:", err);
-        document.getElementById("username").textContent = "Error";
-      });
+    const userRef = doc(firestore, "users", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      balanceSpan.textContent = userData.balance ?? 0;
     } else {
-      document.getElementById("username").textContent = "Unknown";
+      balanceSpan.textContent = "Error";
     }
+
+    window.logout = function () {
+      localStorage.removeItem("userId");
+      window.location.href = "/";
+    };
   </script>
 </body>
 </html>
