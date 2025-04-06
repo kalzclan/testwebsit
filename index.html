@@ -1,116 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login/Register</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding-top: 50px;
-    }
-    #register-form {
-      display: none;
-      margin-top: 20px;
-    }
-    input {
-      margin: 5px;
-      padding: 8px;
-      width: 200px;
-    }
-  </style>
+  <title>Firebase Connection</title>
 </head>
 <body>
-  <h2 id="heading">Login with Telegram</h2>
+  <h2 id="heading">Welcome</h2>
 
-  <!-- Telegram Login Button -->
-  <div id="telegram-login-btn">
-    <script async src="https://telegram.org/js/telegram-widget.js?7"
-            data-telegram-login="kbabenibot"
-            data-size="large"
-            data-userpic="false"
-            data-request-access="write">
-    </script>
-  </div>
-
-  <!-- Register Form for new users -->
-  <div id="register-form">
-    <h3>Complete Registration</h3>
-    <input type="text" id="name" placeholder="Your Name"><br>
-    <input type="text" id="phone" placeholder="Phone Number"><br>
-    <button onclick="submitRegistration()">Submit</button>
+  <!-- Registration form (hidden by default) -->
+  <div id="register-form" style="display: none;">
+    <input type="text" id="username" placeholder="Enter your name" /><br />
+    <input type="text" id="phone" placeholder="Enter your phone number" /><br />
+    <button onclick="saveData()">Register</button>
   </div>
 
   <script type="module">
+    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
       authDomain: "habeshagames-1f999.firebaseapp.com",
       projectId: "habeshagames-1f999",
-      storageBucket: "habeshagames-1f999.firebasestorage.app",
+      storageBucket: "habeshagames-1f999.appspot.com",
       messagingSenderId: "919693990773",
       appId: "1:919693990773:web:f32664a1b944b38101113c",
       measurementId: "G-G5C67RMJDY"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const telegramId = urlParams.get("id");
-    const username = urlParams.get("username");
-    const firstName = urlParams.get("first_name");
-    const lastName = urlParams.get("last_name");
-
-    if (telegramId && username) {
-      document.getElementById("telegram-login-btn").style.display = "none";
-      document.getElementById("heading").textContent = "Checking your account...";
-
-      const userRef = doc(firestore, "users", telegramId);
-
-      getDoc(userRef).then(async (docSnap) => {
-        if (docSnap.exists()) {
-          // Existing user
-          sessionStorage.setItem("telegramId", telegramId);
-          window.location.href = "/home.html?id=" + telegramId;
+    // Check if user is already registered
+    window.addEventListener("DOMContentLoaded", async () => {
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        const userRef = doc(firestore, "users", userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          window.location.href = "/home.html?id=" + userId;
+          return;
         } else {
-          // New user, show registration form
-          document.getElementById("register-form").style.display = "block";
-          window.userInfo = {
-            telegramId,
-            username,
-            firstName,
-            lastName
-          };
+          localStorage.removeItem("userId");
         }
-      }).catch((err) => {
-        console.error("Login error:", err);
-        document.getElementById("heading").textContent = "Something went wrong!";
-      });
-    }
+      }
+      // Show form if not registered
+      document.getElementById("register-form").style.display = "block";
+    });
 
-    window.submitRegistration = async function () {
-      const name = document.getElementById("name").value.trim();
+    // Save new user data
+    window.saveData = async function () {
+      const username = document.getElementById("username").value.trim();
       const phone = document.getElementById("phone").value.trim();
 
-      if (!name || !phone) {
-        alert("Please fill in all fields");
+      if (!username || !phone) {
+        alert("Please fill in both name and phone.");
         return;
       }
 
-      const userRef = doc(firestore, "users", window.userInfo.telegramId);
+      const userId = Date.now().toString(); // use timestamp as unique ID
 
-      await setDoc(userRef, {
-        ...window.userInfo,
-        fullName: name,
-        phone: phone,
-        createdAt: new Date().toISOString()
-      });
-
-      sessionStorage.setItem("telegramId", window.userInfo.telegramId);
-      window.location.href = "/home.html?id=" + window.userInfo.telegramId;
-    };
+      try {
+        await setDoc(doc(firestore, "users", userId), {
+          username: username,
+          phone: phone,
+          createdAt: new Date().toISOString()
+        });
+        localStorage.setItem("userId", userId);
+        window.location.href = "/home.html?id=" + userId;
+      } catch (err) {
+        console.error("Error saving user:", err);
+        alert("Failed to save user.");
+      }
+    }
   </script>
 </body>
 </html>
