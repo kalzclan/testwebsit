@@ -2,17 +2,26 @@
 <html>
 <head>
   <title>Telegram Auto Register</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Login with Telegram</h2>
+  <h2 id="heading">Login with Telegram</h2>
 
   <!-- Telegram Login Button -->
-  <script async src="https://telegram.org/js/telegram-widget.js?7"
-          data-telegram-login="kbabenibot"
-          data-size="large"
-          data-userpic="false"
-          data-request-access="write">
-  </script>
+  <div id="telegram-login-btn">
+    <script async src="https://telegram.org/js/telegram-widget.js?7"
+            data-telegram-login="kbabenibot"
+            data-size="large"
+            data-userpic="false"
+            data-request-access="write">
+    </script>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -31,7 +40,6 @@
     const app = initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
 
-    // Read Telegram query params
     const urlParams = new URLSearchParams(window.location.search);
     const telegramId = urlParams.get("id");
     const username = urlParams.get("username");
@@ -39,14 +47,15 @@
     const lastName = urlParams.get("last_name");
 
     if (telegramId && username) {
+      // Hide login button and heading
+      document.getElementById("telegram-login-btn").style.display = "none";
+      document.getElementById("heading").textContent = "Logging you in...";
+
       const userRef = doc(firestore, "users", telegramId);
 
       getDoc(userRef).then(async (docSnap) => {
-        if (docSnap.exists()) {
-          // ✅ Already registered → go to home
-          window.location.href = "/home.html";
-        } else {
-          // 🆕 New user → save to Firestore then redirect
+        if (!docSnap.exists()) {
+          // New user: save to Firestore
           await setDoc(userRef, {
             telegramId,
             username,
@@ -54,10 +63,14 @@
             lastName,
             createdAt: new Date().toISOString()
           });
-          window.location.href = "/home.html";
         }
-      }).catch(err => {
-        console.error("Error checking/saving user:", err);
+
+        // Save ID in session and redirect
+        sessionStorage.setItem("telegramId", telegramId);
+        window.location.href = "/home.html?id=" + telegramId;
+      }).catch((err) => {
+        console.error("Login error:", err);
+        document.getElementById("heading").textContent = "Something went wrong!";
       });
     }
   </script>
