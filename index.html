@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GambleBot Register</title>
+  <title>HABESHA GAMES</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -57,6 +57,16 @@
       background: #00cc7a;
     }
 
+    .logout {
+      margin-top: 10px;
+      background: #ff4444;
+      color: white;
+    }
+
+    .logout:hover {
+      background: #cc3333;
+    }
+
     .error {
       color: #ff5555;
       text-align: center;
@@ -66,10 +76,11 @@
 </head>
 <body>
   <div id="register-form" style="display: none;">
-    <h2>GambleBot</h2>
+    <h2>HABESHA GAMES</h2>
     <input type="text" id="username" placeholder="Enter your name" />
     <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" />
     <button onclick="saveData()">Register</button>
+    <button class="logout" onclick="logout()">Logout</button>
     <div id="error" class="error"></div>
   </div>
 
@@ -122,22 +133,33 @@
         return;
       }
 
-      try {
-        const userId = phone;
+      const userRef = doc(firestore, "users", phone);
+      const existingUser = await getDoc(userRef);
 
-        await setDoc(doc(firestore, "users", userId), {
+      if (existingUser.exists()) {
+        errorDiv.textContent = "Phone number already registered.";
+        return;
+      }
+
+      try {
+        await setDoc(userRef, {
           username: username,
           phone: phone,
           balance: 0,
           createdAt: new Date().toISOString()
         });
 
-        localStorage.setItem("userId", userId);
-        window.location.href = "/home.html?id=" + userId;
+        localStorage.setItem("userId", phone);
+        window.location.href = "/home.html?id=" + phone;
       } catch (err) {
         console.error("Error saving user:", err);
         errorDiv.textContent = "Failed to register. Try again.";
       }
+    }
+
+    window.logout = function () {
+      localStorage.removeItem("userId");
+      location.reload(); // Refresh the page to show the form again
     }
   </script>
 </body>
