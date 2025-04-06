@@ -5,31 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HABESHA GAMES - Home</title>
   <style>
+    :root {
+      --bg-color: #000;
+      --text-color: #fff;
+      --card-color: #1e1e1e;
+      --highlight: #00ff99;
+      --danger: #ff4444;
+    }
+
+    body.light {
+      --bg-color: #f3f3f3;
+      --text-color: #111;
+      --card-color: #ffffff;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(145deg, #000, #1a1a1a);
-      color: #fff;
+      background: var(--bg-color);
+      color: var(--text-color);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
     }
 
     header {
-      background-color: #00ff99;
+      background-color: var(--highlight);
       color: #000;
       text-align: center;
       padding: 20px;
       font-size: 24px;
       font-weight: bold;
+      position: relative;
+    }
+
+    .toggle-theme {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
     }
 
     .balance {
-      background: #111;
+      background: var(--card-color);
       padding: 15px;
       text-align: center;
       font-size: 18px;
-      color: #00ff99;
+      color: var(--highlight);
       border-bottom: 1px solid #222;
     }
 
@@ -40,24 +66,26 @@
 
     .games h3 {
       margin-bottom: 15px;
-      color: #fff;
     }
 
     .game-card {
-      background: #1e1e1e;
+      background: var(--card-color);
       margin-bottom: 15px;
       padding: 15px;
       border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0, 255, 128, 0.2);
+      box-shadow: 0 0 15px rgba(0, 255, 128, 0.1);
+      transform: scale(1);
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
     }
 
     .game-card:hover {
-      background: #292929;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 255, 128, 0.3);
       cursor: pointer;
     }
 
     .logout-btn {
-      background: #ff4444;
+      background: var(--danger);
       color: white;
       padding: 15px;
       font-size: 16px;
@@ -65,6 +93,7 @@
       width: 100%;
       border-radius: 0;
       cursor: pointer;
+      transition: background 0.3s;
     }
 
     .logout-btn:hover {
@@ -73,12 +102,14 @@
   </style>
 </head>
 <body>
-
-  <header>HABESHA GAMES</header>
-  <div class="balance">Balance: <span id="balance">Loading...</span> birr</div>
+  <header>
+    HABESHA GAMES
+    <button class="toggle-theme" onclick="toggleTheme()">🌓</button>
+  </header>
+  <div class="balance">Balance: <span id="balance">0</span> birr</div>
 
   <div class="games">
-    <h3>Available Games 🎲</h3>
+    <h3>Available Games 🎮</h3>
     <div class="game-card">🎰 Slot Machine</div>
     <div class="game-card">🃏 Blackjack</div>
     <div class="game-card">🎯 Lucky Spin</div>
@@ -106,7 +137,7 @@
     const firestore = getFirestore(app);
 
     const userId = new URLSearchParams(window.location.search).get("id");
-    const balanceSpan = document.getElementById("balance");
+    const balanceEl = document.getElementById("balance");
 
     if (!userId) {
       window.location.href = "/";
@@ -117,14 +148,42 @@
 
     if (userSnap.exists()) {
       const userData = userSnap.data();
-      balanceSpan.textContent = userData.balance ?? 0;
+      const balance = userData.balance ?? 0;
+      animateBalance(balance);
     } else {
-      balanceSpan.textContent = "Error";
+      balanceEl.textContent = "Error";
+    }
+
+    function animateBalance(balance) {
+      let current = 0;
+      const increment = Math.ceil(balance / 40);
+      const interval = setInterval(() => {
+        current += increment;
+        if (current >= balance) {
+          balanceEl.textContent = balance;
+          clearInterval(interval);
+        } else {
+          balanceEl.textContent = current;
+        }
+      }, 20);
     }
 
     window.logout = function () {
       localStorage.removeItem("userId");
       window.location.href = "/";
+    };
+
+    // Theme toggle
+    const body = document.body;
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "light") {
+      body.classList.add("light");
+    }
+
+    window.toggleTheme = function () {
+      body.classList.toggle("light");
+      const isLight = body.classList.contains("light");
+      localStorage.setItem("theme", isLight ? "light" : "dark");
     };
   </script>
 </body>
