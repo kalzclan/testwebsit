@@ -1,84 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Habesha Games</title>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js"></script>
-    
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
-            authDomain: "habeshagames-1f999.firebaseapp.com",
-            projectId: "habeshagames-1f999",
-            storageBucket: "habeshagames-1f999.firebasestorage.app",
-            messagingSenderId: "919693990773",
-            appId: "1:919693990773:web:03bd597968bfe32001113c"
-        };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        
-        // Check if user is registered
-        window.onload = function () {
-            const registered = localStorage.getItem("registered");
-            if (!registered) {
-                window.location.href = "register.html";
-            } else {
-                document.getElementById("welcome-message").innerText = 
-                    "Welcome, " + localStorage.getItem("firstName") + "!";
-            }
-        };
-    </script>
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-            text-align: center;
-        }
-
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 400px;
-        }
-
-        h1 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        img {
-            width: 100px;
-            height: 100px;
-            margin-bottom: 10px;
-        }
-    </style>
+  <title>Firebase Telegram Auth</title>
 </head>
 <body>
-    <div class="container">
-        <img src="logo.png" alt="Habesha Games Logo">
-        <h1 id="welcome-message">Loading...</h1>
-    </div>
+  <h2>Telegram Login with Firebase Check</h2>
+
+  <!-- Telegram Login Button -->
+  <script async src="https://telegram.org/js/telegram-widget.js?7"
+          data-telegram-login="kbabenibot"  <!-- Replace with your Bot's username -->
+          data-size="large"
+          data-userpic="false"
+          data-request-access="write"
+          data-onauth="onTelegramAuth(user)"></script>
+
+  <script type="module">
+    // Firebase SDK imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
+      authDomain: "habeshagames-1f999.firebaseapp.com",
+      projectId: "habeshagames-1f999",
+      storageBucket: "habeshagames-1f999.firebasestorage.app",
+      messagingSenderId: "919693990773",
+      appId: "1:919693990773:web:f32664a1b944b38101113c",
+      measurementId: "G-G5C67RMJDY"
+    };
+
+    // Init Firebase
+    const app = initializeApp(firebaseConfig);
+    const firestore = getFirestore(app);
+
+    // Telegram login callback
+    window.onTelegramAuth = async function(user) {
+      const telegramId = user.id.toString();
+      const username = user.username;
+
+      try {
+        const userRef = doc(firestore, "users", telegramId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          // ✅ User found → redirect to home
+          window.location.href = "/home.html";
+        } else {
+          // ❌ User not found → redirect to register with query params
+          const params = new URLSearchParams({
+            username: username || "",
+            id: telegramId
+          }).toString();
+          window.location.href = "/register.html?" + params;
+        }
+      } catch (err) {
+        console.error("Error checking user:", err);
+      }
+    };
+  </script>
 </body>
 </html>
