@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Telegram Auto Register</title>
+  <title>Login/Register</title>
   <style>
     body {
       font-family: sans-serif;
       text-align: center;
       padding-top: 50px;
+    }
+    #register-form {
+      display: none;
+      margin-top: 20px;
+    }
+    input {
+      margin: 5px;
+      padding: 8px;
+      width: 200px;
     }
   </style>
 </head>
@@ -21,6 +30,14 @@
             data-userpic="false"
             data-request-access="write">
     </script>
+  </div>
+
+  <!-- Register Form for new users -->
+  <div id="register-form">
+    <h3>Complete Registration</h3>
+    <input type="text" id="name" placeholder="Your Name"><br>
+    <input type="text" id="phone" placeholder="Phone Number"><br>
+    <button onclick="submitRegistration()">Submit</button>
   </div>
 
   <script type="module">
@@ -47,32 +64,53 @@
     const lastName = urlParams.get("last_name");
 
     if (telegramId && username) {
-      // Hide login button and heading
       document.getElementById("telegram-login-btn").style.display = "none";
-      document.getElementById("heading").textContent = "Logging you in...";
+      document.getElementById("heading").textContent = "Checking your account...";
 
       const userRef = doc(firestore, "users", telegramId);
 
       getDoc(userRef).then(async (docSnap) => {
-        if (!docSnap.exists()) {
-          // New user: save to Firestore
-          await setDoc(userRef, {
+        if (docSnap.exists()) {
+          // Existing user
+          sessionStorage.setItem("telegramId", telegramId);
+          window.location.href = "/home.html?id=" + telegramId;
+        } else {
+          // New user, show registration form
+          document.getElementById("register-form").style.display = "block";
+          window.userInfo = {
             telegramId,
             username,
             firstName,
-            lastName,
-            createdAt: new Date().toISOString()
-          });
+            lastName
+          };
         }
-
-        // Save ID in session and redirect
-        sessionStorage.setItem("telegramId", telegramId);
-        window.location.href = "/home.html?id=" + telegramId;
       }).catch((err) => {
         console.error("Login error:", err);
         document.getElementById("heading").textContent = "Something went wrong!";
       });
     }
+
+    window.submitRegistration = async function () {
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+
+      if (!name || !phone) {
+        alert("Please fill in all fields");
+        return;
+      }
+
+      const userRef = doc(firestore, "users", window.userInfo.telegramId);
+
+      await setDoc(userRef, {
+        ...window.userInfo,
+        fullName: name,
+        phone: phone,
+        createdAt: new Date().toISOString()
+      });
+
+      sessionStorage.setItem("telegramId", window.userInfo.telegramId);
+      window.location.href = "/home.html?id=" + window.userInfo.telegramId;
+    };
   </script>
 </body>
 </html>
