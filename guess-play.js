@@ -4,9 +4,10 @@ import {
   doc, 
   getDoc,
   onSnapshot, 
-  updateDoc, 
+  updateDoc,
   arrayUnion,
-  increment
+  increment,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -23,11 +24,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Game constants
-const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
-let inactivityTimer;
-let lastActivityTime = Date.now();
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
-// Game state variables
+// Game state
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get("room");
 const userId = localStorage.getItem('userId') || Math.random().toString(36).substring(2, 9);
@@ -36,305 +35,262 @@ localStorage.setItem('userId', userId);
 let secret = [];
 let gameOver = false;
 let isPlayer1 = false;
+let lastLocalActivity = Date.now();
 
 // DOM elements
-const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
-const submitBtn = document.getElementById("submit-btn");
-const resultEl = document.getElementById("result");
-const player1NameEl = document.getElementById("player1-name");
-const player2NameEl = document.getElementById("player2-name");
-const winnerDisplay = document.getElementById("winner-display");
-const winnerMessage = document.getElementById("winner-message");
-const loserDisplay = document.getElementById("loser-display");
-const loserMessage = document.getElementById("loser-message");
-const historyTable = document.getElementById("history-table");
+const elements = {
+  inputs: ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id)),
+  submitBtn: document.getElementById("submit-btn"),
+  resultEl: document.getElementById("result"),
+  player1NameEl: document.getElementById("player1-name"),
+  player2NameEl: document.getElementById("player2-name"),
+  winnerDisplay: document.getElementById("winner-display"),
+  winnerMessage: document.getElementById("winner-message"),
+  loserDisplay: document.getElementById("loser-display"),
+  loserMessage: document.getElementById("loser-message"),
+  historyTable: document.getElementById("history-table")
+};
 
-// Helper Functions
-async function fetchPlayerName(playerId, element) {
-  const userRef = doc(db, "users", playerId);
-  const docSnap = await getDoc(userRef);
-  if (docSnap.exists()) {
-    element.innerText = element.id === "player1-name" 
-      ? `Player 1: ${docSnap.data().username}`
-      : `Player 2: ${docSnap.data().username}`;
+// Optimized Firestore operations
+const gameRef = doc(db, "games", roomId);
+let unsubscribeGameListener;
+
+async function initializeGame() {
+  // Single Firestore update for initial setup
+  const gameSnap = await getDoc(gameRef);
+  
+  if (!gameSnap.exists()) {
+    alert("Game not found");
+    return;
   }
-}
 
-async function updateUserBalance(userId, amount) {
-  const userRef = doc(db, "users", userId);
-  try {
-    await updateDoc(userRef, {
-      balance: increment(amount)
+  const gameData = gameSnap.data();
+  
+  // Determine player position
+  if (!gameData.player1Id) {
+    isPlayer1 = true;
+    await updateDoc(gameRef, {
+      player1Id: userId,
+      createdAt: serverTimestamp(),
+      lastUpdate: serverTimestamp()
     });
-    const updatedUser = await getDoc(userRef);
-    return updatedUser.data().balance;
-  } catch (error) {
-    console.error("Error updating balance:", error);
-    return null;
+  } else if (!gameData.player2Id && gameData.player1Id !== userId) {
+    await updateDoc(gameRef, {
+      player2Id: userId,
+      joined: true,
+      joinedAt: serverTimestamp(),
+      lastUpdate: serverTimestamp()
+    });
+  }
+
+  // Set up real-time listener
+  unsubscribeGameListener = onSnapshot(gameRef, handleGameUpdate);
+}
+
+async function handleGameUpdate(snap) {
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+  lastLocalActivity = Date.now();
+
+  // Update UI immediately
+  updatePlayerNames(data);
+  updateGameStatus(data);
+  updateHistory(data);
+
+  // Handle game end
+  if (data.winner && !gameOver) {
+    gameOver = true;
+    elements.submitBtn.disabled = true;
+    handleGameConclusion(data.winner);
   }
 }
 
-async function handleGameEnd(winnerId) {
-  try {
-    const gameData = (await getDoc(gameRef)).data();
-    if (!gameData || gameData.processed) return;
-    
-    const loserId = winnerId === gameData.player1Id ? gameData.player2Id : gameData.player1Id;
-    
-    // Only Player 1 (host) handles money transactions
-    if (isPlayer1) {
-      const winnerBalance = await updateUserBalance(winnerId, 50);
-      const loserBalance = await updateUserBalance(loserId, -50);
-      
-      await updateDoc(gameRef, {
-        processed: true,
-        transactions: arrayUnion({
-          winner: winnerId,
-          loser: loserId,
-          amount: 50,
-          timestamp: new Date().toISOString()
-        })
-      });
-    }
-
-    // Show appropriate messages
-    if (winnerId === userId) {
-      showWinnerDisplay("You won! +50 coins!");
-      createConfetti();
-    } else {
-      showLoserDisplay("You lost! -50 coins!");
-    }
-  } catch (error) {
-    console.error("Error handling game end:", error);
+// Optimized UI updates
+function updatePlayerNames(data) {
+  if (data.player1Id) {
+    getDoc(doc(db, "users", data.player1Id)).then(snap => {
+      if (snap.exists()) elements.player1NameEl.textContent = `Player 1: ${snap.data().username}`;
+    });
+  }
+  if (data.player2Id) {
+    getDoc(doc(db, "users", data.player2Id)).then(snap => {
+      if (snap.exists()) elements.player2NameEl.textContent = `Player 2: ${snap.data().username}`;
+    });
   }
 }
 
-async function checkHostInactivity() {
-  const gameData = (await getDoc(gameRef)).data();
-  if (!gameData || gameOver) return;
+function updateGameStatus(data) {
+  if (!data.joined) {
+    elements.resultEl.textContent = "Waiting for another player...";
+    elements.submitBtn.disabled = true;
+  } else if (data.secret?.length === 4) {
+    secret = data.secret;
+    elements.resultEl.textContent = "Game started! Make your guess!";
+    elements.submitBtn.disabled = false;
+  }
+}
 
-  const lastUpdate = new Date(gameData.lastUpdate).getTime();
-  const currentTime = Date.now();
+function updateHistory(data) {
+  if (data.rounds) {
+    const userRounds = data.rounds.filter(round => round.playerId === userId);
+    elements.historyTable.innerHTML = `
+      <tr>
+        <th>Guess</th>
+        <th>Number</th>
+        <th>Order</th>
+      </tr>
+      ${userRounds.map(round => `
+        <tr>
+          <td>${round.guess}</td>
+          <td>${round.result.split(', ')[1].split(': ')[1]}</td>
+          <td>${round.result.split(', ')[0].split(': ')[1]}</td>
+        </tr>
+      `).join('')}
+    `;
+  }
+}
 
-  // If host is inactive for more than 10 minutes and game isn't over
-  if (!isPlayer1 && 
-      currentTime - lastUpdate > INACTIVITY_TIMEOUT && 
-      !gameData.winner) {
-    
-    // Guest automatically wins
+// Optimized guess submission
+async function submitGuess() {
+  if (gameOver) return;
+
+  const guess = elements.inputs.map(input => parseInt(input.value));
+  
+  // Client-side validation
+  if (new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
+    elements.resultEl.textContent = "Invalid guess. Use 1-9 without repeats.";
+    return;
+  }
+
+  // Calculate results client-side
+  let correctPosition = 0;
+  let correctNumber = 0;
+  secret.forEach((num, i) => {
+    if (guess[i] === num) correctPosition++;
+    else if (secret.includes(guess[i])) correctNumber++;
+  });
+
+  // Single Firestore update
+  await updateDoc(gameRef, {
+    rounds: arrayUnion({
+      playerId: userId,
+      guess: guess.join(""),
+      result: `Right place: ${correctPosition}, Right number: ${correctNumber}`,
+      timestamp: serverTimestamp()
+    }),
+    lastUpdate: serverTimestamp()
+  });
+
+  // Clear inputs and focus
+  elements.inputs.forEach(input => input.value = "");
+  elements.inputs[0].focus();
+
+  // Immediate UI feedback
+  if (correctPosition === 4) {
     await updateDoc(gameRef, {
       winner: userId,
-      rounds: arrayUnion({
-        playerId: userId,
-        guess: "AUTO-WIN",
-        result: "Host inactive",
-        timestamp: new Date().toISOString()
-      }),
-      lastUpdate: new Date().toISOString()
+      lastUpdate: serverTimestamp()
     });
-
-    await handleGameEnd(userId);
+  } else {
+    elements.resultEl.textContent = `Guess: ${guess.join("")}\nCorrect: ${correctNumber}\nPosition: ${correctPosition}`;
   }
 }
 
-// UI Functions
-function updateHistoryTable(rounds) {
-  while (historyTable.rows.length > 1) {
-    historyTable.deleteRow(1);
+// Game conclusion handling
+async function handleGameConclusion(winnerId) {
+  if (winnerId === userId) {
+    showWinnerDisplay("You won! +50 coins!");
+    createConfetti();
+  } else {
+    showLoserDisplay("You lost! -50 coins!");
   }
 
-  rounds.forEach(round => {
-    const row = historyTable.insertRow();
-    const guessCell = row.insertCell(0);
-    const numberCell = row.insertCell(1);
-    const orderCell = row.insertCell(2);
+  // Only host processes transactions
+  if (isPlayer1) {
+    const gameData = (await getDoc(gameRef)).data();
+    if (gameData.processed) return;
+
+    const loserId = winnerId === gameData.player1Id ? gameData.player2Id : gameData.player1Id;
     
-    guessCell.textContent = round.guess;
-    numberCell.textContent = round.result.split(', ')[1].split(': ')[1];
-    orderCell.textContent = round.result.split(', ')[0].split(': ')[1];
-  });
+    // Batch updates
+    await Promise.all([
+      updateDoc(doc(db, "users", winnerId), { balance: increment(50) }),
+      updateDoc(doc(db, "users", loserId), { balance: increment(-50) }),
+      updateDoc(gameRef, { processed: true })
+    ]);
+  }
 }
 
-function disableInputs() {
-  inputs.forEach(input => input.disabled = true);
-  submitBtn.disabled = true;
+// Inactivity monitoring
+function startInactivityMonitor() {
+  const checkInterval = setInterval(async () => {
+    if (gameOver) {
+      clearInterval(checkInterval);
+      return;
+    }
+
+    const gameData = (await getDoc(gameRef)).data();
+    if (!gameData || isPlayer1) return;
+
+    const inactiveTime = Date.now() - new Date(gameData.lastUpdate?.toDate()).getTime();
+    if (inactiveTime > INACTIVITY_TIMEOUT && !gameData.winner) {
+      await updateDoc(gameRef, {
+        winner: userId,
+        rounds: arrayUnion({
+          playerId: userId,
+          guess: "AUTO-WIN",
+          result: "Host inactive",
+          timestamp: serverTimestamp()
+        }),
+        lastUpdate: serverTimestamp()
+      });
+    }
+  }, 30000); // Check every 30 seconds
 }
 
+// UI Helpers
 function showWinnerDisplay(message) {
-  winnerMessage.innerText = message;
-  winnerDisplay.style.display = "flex";
+  elements.winnerMessage.textContent = message;
+  elements.winnerDisplay.style.display = "flex";
 }
 
 function showLoserDisplay(message) {
-  loserMessage.innerText = message;
-  loserDisplay.style.display = "flex";
+  elements.loserMessage.textContent = message;
+  elements.loserDisplay.style.display = "flex";
 }
 
 function createConfetti() {
   const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 50; i++) { // Reduced number of particles
     const confetti = document.createElement('div');
     confetti.className = 'confetti';
     confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    confetti.style.left = Math.random() * window.innerWidth + 'px';
-    confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
+    confetti.style.left = `${Math.random() * 100}vw`;
+    confetti.style.animation = `confetti-fall ${Math.random() * 2 + 2}s linear forwards`;
     document.body.appendChild(confetti);
-    
-    setTimeout(() => {
-      confetti.remove();
-    }, 3000);
+    setTimeout(() => confetti.remove(), 3000);
   }
 }
 
-// Event Handlers
-window.hideWinnerDisplay = function() {
-  winnerDisplay.style.display = "none";
-}
-
-window.hideLoserDisplay = function() {
-  loserDisplay.style.display = "none";
-}
-
-window.restartGame = function() {
-  window.location.reload();
-}
-
-window.submitGuess = async function() {
-  if (gameOver) return;
-
-  const guess = inputs.map(input => parseInt(input.value));
-  if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
-    resultEl.innerText = "Invalid guess. Use 1-9 without repeats.";
-    return;
-  }
-
-  let correctPosition = 0;
-  let correctNumber = 0;
-
-  for (let i = 0; i < 4; i++) {
-    if (guess[i] === secret[i]) {
-      correctPosition++;
-      correctNumber++;
-    } else if (secret.includes(guess[i])) {
-      correctNumber++;
-    }
-  }
-
-  const guessStr = guess.join("");
-  const resultStr = `Right place: ${correctPosition}, Right number: ${correctNumber}`;
-  const roundInfo = {
-    playerId: userId,
-    guess: guessStr,
-    result: resultStr,
-    timestamp: new Date().toISOString()
-  };
-
-  inputs.forEach(input => input.value = "");
-  inputs[0].focus();
-
-  if (correctPosition === 4) {
-    await updateDoc(gameRef, { 
-      winner: userId,
-      rounds: arrayUnion(roundInfo),
-      lastUpdate: new Date().toISOString()
-    });
-  } else {
-    await updateDoc(gameRef, { 
-      rounds: arrayUnion(roundInfo),
-      lastUpdate: new Date().toISOString()
-    });
-    resultEl.innerText = `Your guess: ${guessStr}\nCorrect position: ${correctPosition}\nCorrect number: ${correctNumber}`;
-  }
-}
-
-// Input handling
-inputs.forEach((input, idx) => {
+// Event listeners
+elements.inputs.forEach((input, idx) => {
   input.addEventListener("input", () => {
     if (input.value.length === 1 && idx < 3) {
-      inputs[idx + 1].focus();
+      elements.inputs[idx + 1].focus();
     }
   });
 });
 
-// Game Initialization
-const gameRef = doc(db, "games", roomId);
+window.submitGuess = submitGuess;
+window.hideWinnerDisplay = () => elements.winnerDisplay.style.display = "none";
+window.hideLoserDisplay = () => elements.loserDisplay.style.display = "none";
+window.restartGame = () => window.location.reload();
 
-async function initGame() {
-  onSnapshot(gameRef, async (snap) => {
-    if (snap.exists()) {
-      const data = snap.data();
-      lastActivityTime = Date.now();
-      
-      // Update last activity timestamp
-      await updateDoc(gameRef, {
-        lastUpdate: new Date().toISOString()
-      });
+// Initialize
+initializeGame().then(startInactivityMonitor);
 
-      // Set player positions
-      if (!data.player1Id) {
-        isPlayer1 = true;
-        await updateDoc(gameRef, { 
-          player1Id: userId,
-          createdAt: new Date().toISOString(),
-          lastUpdate: new Date().toISOString()
-        });
-        await fetchPlayerName(userId, player1NameEl);
-      } else if (!data.player2Id && data.player1Id !== userId) {
-        await updateDoc(gameRef, { 
-          player2Id: userId,
-          joined: true,
-          joinedAt: new Date().toISOString(),
-          lastUpdate: new Date().toISOString()
-        });
-        await fetchPlayerName(userId, player2NameEl);
-      }
-      
-      // Load player names
-      if (data.player1Id) await fetchPlayerName(data.player1Id, player1NameEl);
-      if (data.player2Id) await fetchPlayerName(data.player2Id, player2NameEl);
-      
-      if (!data.joined) {
-        resultEl.innerText = "Waiting for another player to join...";
-        submitBtn.disabled = true;
-      } else {
-        secret = data.secret || [];
-        if (secret.length === 4) {
-          resultEl.innerText = "Game started! Make your guess!";
-          submitBtn.disabled = false;
-          
-          // Start inactivity check
-          clearTimeout(inactivityTimer);
-          inactivityTimer = setTimeout(checkHostInactivity, INACTIVITY_TIMEOUT);
-        }
-      }
-
-      // Update game history
-      if (data.rounds) {
-        updateHistoryTable(data.rounds.filter(round => round.playerId === userId));
-      }
-
-      // Handle winner
-      if (data.winner && !gameOver) {
-        gameOver = true;
-        disableInputs();
-        await handleGameEnd(data.winner);
-      }
-    } else {
-      resultEl.innerText = "Game not found.";
-      submitBtn.disabled = true;
-    }
-  });
-}
-
-// Cleanup on page exit
-window.addEventListener('beforeunload', async () => {
-  if (isPlayer1 && !gameOver) {
-    await updateDoc(gameRef, {
-      lastUpdate: new Date().toISOString()
-    });
-  }
-  clearTimeout(inactivityTimer);
+// Cleanup
+window.addEventListener('beforeunload', () => {
+  if (unsubscribeGameListener) unsubscribeGameListener();
 });
-
-// Start the game
-initGame();
