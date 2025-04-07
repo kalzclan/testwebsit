@@ -1,111 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Multiplayer Number Guessing Game</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #gameContainer { max-width: 600px; margin: auto; }
-    #guessHistory { margin-top: 20px; }
-  </style>
+  <title>Guess Number Play - HABESHA GAMES</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="gameContainer">
-    <h1>Number Guessing Game</h1>
-    <p id="welcome"></p>
-    <input type="number" id="guessInput" placeholder="Enter your guess" />
-    <button id="submitGuess">Guess</button>
-    <div id="feedback"></div>
-    <div id="timerDisplay" style="font-size: 1.5em; font-weight: bold; margin-top: 10px;">3:00</div>
-    <div id="guessHistory"></div>
+  <h1>Guess Number Game</h1>
+
+  <div class="game-box">
+    <div class="player-info">
+      <div class="player-name player1" id="player1-name">Player 1: Loading...</div>
+      <div class="player-name player2" id="player2-name">Player 2: Waiting...</div>
+    </div>
+    
+    <i class="fas fa-comment-dots chat-icon" onclick="toggleChat()"></i>
+    
+    <div id="timer">Time left: 60s</div>
+    <p>Enter your 4-digit guess (no 0s, no repeats):</p>
+    <div class="input-group">
+      <input id="g1" maxlength="1" type="number" min="1" max="9">
+      <input id="g2" maxlength="1" type="number" min="1" max="9">
+      <input id="g3" maxlength="1" type="number" min="1" max="9">
+      <input id="g4" maxlength="1" type="number" min="1" max="9">
+    </div>
+    <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
+    <div id="result"></div>
+    <div id="history"></div>
+    <button onclick="restartGame()">Restart</button>
   </div>
 
-  <script>
-    const firebaseConfig = {
-      // your firebase config here
-    };
+  <div class="chat-popup" id="chat-popup">
+    <div class="chat-header">
+      <h3>Chat</h3>
+      <button class="close-chat" onclick="toggleChat()">&times;</button>
+    </div>
+    <div id="chat-messages"></div>
+    <div class="chat-input-group">
+      <input type="text" id="chat-message-input" placeholder="Type your message...">
+      <button class="send-chat-btn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
 
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const auth = firebase.auth();
+  <div id="winner-display" class="winner-display" style="display: none;">
+    <h2>🎉 You Won! 🎉</h2>
+    <p id="winner-message"></p>
+    <button onclick="hideWinnerDisplay()">Continue</button>
+  </div>
 
-    let playerId = localStorage.getItem("playerId");
-    let playerName = "";
-
-    if (!playerId) {
-      playerId = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem("playerId", playerId);
-    }
-
-    const gameRef = database.ref("game");
-
-    // Fetch username from users/<playerId>/username
-    const fetchUsername = async () => {
-      const snapshot = await database.ref(`users/${playerId}/username`).once("value");
-      playerName = snapshot.val() || "Unknown Player";
-      document.getElementById("welcome").innerText = `Welcome, ${playerName}`;
-    };
-
-    fetchUsername();
-
-    const guessInput = document.getElementById("guessInput");
-    const submitGuess = document.getElementById("submitGuess");
-    const feedback = document.getElementById("feedback");
-    const guessHistory = document.getElementById("guessHistory");
-
-    submitGuess.addEventListener("click", () => {
-      const guess = guessInput.value;
-      if (guess === "") return;
-
-      const newGuessRef = gameRef.child("guesses").push();
-      newGuessRef.set({
-        playerId,
-        playerName,
-        guess: Number(guess),
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-      });
-
-      guessInput.value = ""; // Clear after every guess
-    });
-
-    gameRef.child("guesses").on("value", (snapshot) => {
-      const guesses = snapshot.val();
-      guessHistory.innerHTML = "<h3>Guess History:</h3>";
-      if (guesses) {
-        const sorted = Object.values(guesses).sort((a, b) => a.timestamp - b.timestamp);
-        sorted.forEach((g) => {
-          const item = document.createElement("p");
-          item.textContent = `${g.playerName} guessed ${g.guess}`;
-          guessHistory.appendChild(item);
-        });
-      }
-    });
-
-    // Timer Logic
-    gameRef.child("timer").on("value", (snapshot) => {
-      const data = snapshot.val();
-      if (!data || !data.endTime) return;
-
-      const updateTimer = () => {
-        const now = Date.now();
-        const timeLeft = Math.max(0, Math.floor((data.endTime - now) / 1000));
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        document.getElementById("timerDisplay").textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
-
-        if (timeLeft <= 0) {
-          clearInterval(intervalId);
-          alert("Time's up! Game Over.");
-        }
-      };
-
-      updateTimer();
-      const intervalId = setInterval(updateTimer, 1000);
-    });
-  </script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
