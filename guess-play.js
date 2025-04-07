@@ -220,4 +220,66 @@ function createConfetti() {
   }
 }
 
+// ... (previous imports remain the same)
+
+async function updateUserBalance(userId, amount) {
+  const userRef = doc(db, "users", userId);
+  try {
+    await updateDoc(userRef, {
+      balance: increment(amount)
+    });
+  } catch (error) {
+    console.error("Error updating balance:", error);
+  }
+}
+
+async function handleGameEnd(winnerId) {
+  const gameData = (await getDoc(gameRef)).data();
+  const loserId = winnerId === gameData.player1Id ? gameData.player2Id : gameData.player1Id;
+  
+  // Update balances
+  await updateUserBalance(winnerId, 50);
+  await updateUserBalance(loserId, -50);
+  
+  // Show winner/loser displays
+  if (winnerId === userId) {
+    showWinnerDisplay(`You won! +50 coins!`);
+    createConfetti();
+  } else {
+    showLoserDisplay(`You lost! -50 coins!`);
+  }
+}
+
+function showLoserDisplay(message) {
+  const loserDisplay = document.getElementById("loser-display");
+  const loserMessage = document.getElementById("loser-message");
+  loserMessage.innerText = message;
+  loserDisplay.style.display = "flex";
+}
+
+// ... (rest of the existing code remains the same until the onSnapshot callback)
+
+onSnapshot(gameRef, async (snap) => {
+  if (snap.exists()) {
+    const data = snap.data();
+    
+    // ... (previous game setup code remains the same)
+
+    // Handle winner
+    if (data.winner && !gameOver) {
+      gameOver = true;
+      disableInputs();
+      await handleGameEnd(data.winner);
+    }
+  } else {
+    resultEl.innerText = "Game not found.";
+    submitBtn.disabled = true;
+  }
+});
+
+// ... (rest of the code remains the same)
+
+
+
 initGame();
+
