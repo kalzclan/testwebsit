@@ -322,13 +322,19 @@
     const chatPopup = document.getElementById("chat-popup");
     const chatMessages = document.getElementById("chat-messages");
 
+   
+
+    
+    
+    
+    
     // Load user data from Firestore
     async function loadUserData(userId) {
       const userRef = doc(db, "users", userId);
       const userSnap = await getDoc(userRef);
       
       if (userSnap.exists()) {
-        return userSnap.data();
+        return userSnap.data().username;
       } else {
         // Create new user if doesn't exist
         const newName = prompt("Enter your name:") || "Player";
