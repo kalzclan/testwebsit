@@ -141,7 +141,19 @@
           
           if (data.player2Id) {
             const player2Data = await getDoc(doc(db, "users", data.player2Id));
-            player2NameEl.innerText = `Player 2: ${player2Data.exists() ? player2Data.data().name : 'Unknown'}`;
+
+
+ const userRef = doc(db, "users", player2Id);
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+
+           player2NameEl.innerText = `Player 2: ${docSnap.data().username}`;
+       
+      } 
+
+
+              
+           
           }
           
           if (!data.joined) {
