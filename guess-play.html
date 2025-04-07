@@ -2,202 +2,84 @@
 <html>
 <head>
   <title>Guess Number Play - HABESHA GAMES</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: 'Orbitron', sans-serif;
       background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
       color: white;
       text-align: center;
-      padding: 20px 10px;
+      padding: 40px 20px;
       min-height: 100vh;
-      margin: 0;
     }
 
     h1 {
       color: #00ffcc;
-      margin-bottom: 20px;
-      font-size: 1.5rem;
+      margin-bottom: 30px;
     }
 
     .game-box {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 16px;
-      padding: 20px;
-      max-width: 100%;
-      margin: 0 auto;
+      padding: 30px;
+      max-width: 400px;
+      margin: auto;
       box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-      box-sizing: border-box;
-    }
-
-    .player-info {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 15px;
-      font-size: 0.9rem;
-    }
-
-    .player-name {
-      padding: 5px 10px;
-      border-radius: 5px;
-    }
-
-    .player1 {
-      background: rgba(0, 255, 204, 0.2);
-    }
-
-    .player2 {
-      background: rgba(255, 0, 204, 0.2);
     }
 
     .input-group {
       display: flex;
       justify-content: center;
-      gap: 5px;
-      margin: 15px 0;
-      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
     }
 
     input {
-      font-size: 16px;
-      padding: 10px;
-      width: 50px;
-      height: 50px;
+      font-size: 18px;
+      padding: 12px;
+      width: 60px;
       text-align: center;
       border: 1px solid #00ffcc;
       border-radius: 10px;
       background: #1a1a2e;
       color: white;
-      box-sizing: border-box;
     }
 
     button {
-      margin: 10px 5px;
-      padding: 10px 15px;
-      font-size: 14px;
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 16px;
       background-color: #00ffcc;
       color: black;
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      min-width: 100px;
     }
 
     button:hover {
       background-color: #00e6b8;
     }
 
-    button:disabled {
-      background-color: #666;
-      cursor: not-allowed;
-    }
-
     #result {
-      margin-top: 15px;
-      font-size: 16px;
+      margin-top: 20px;
+      font-size: 18px;
       white-space: pre-wrap;
-      min-height: 50px;
     }
 
     #history {
-      margin-top: 20px;
-      font-size: 14px;
-      max-height: 150px;
+      margin-top: 30px;
+      font-size: 16px;
+      max-height: 200px;
       overflow-y: auto;
       text-align: left;
       background: rgba(255, 255, 255, 0.1);
-      padding: 10px;
+      padding: 15px;
       border-radius: 10px;
     }
 
     #timer {
-      font-size: 18px;
-      margin: 10px 0;
+      font-size: 20px;
+      margin-top: 10px;
       color: #ffcc00;
-    }
-
-    .round-info {
-      font-size: 12px;
-      color: #aaa;
-      margin-top: 5px;
-    }
-
-    .chat-box {
-      margin-top: 15px;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 10px;
-      border-radius: 10px;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-
-    #messages {
-      min-height: 60px;
-      margin-bottom: 10px;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    #chat-input {
-      width: 70%;
-      padding: 8px;
-      background: #1a1a2e;
-      color: white;
-      border: 1px solid #00ffcc;
-      border-radius: 5px;
-      font-size: 14px;
-    }
-
-    .winner-display {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      font-size: 2rem;
-      color: gold;
-      text-align: center;
-    }
-
-    @media (min-width: 600px) {
-      .game-box {
-        max-width: 400px;
-        padding: 30px;
-      }
-      
-      h1 {
-        font-size: 2rem;
-      }
-      
-      input {
-        width: 60px;
-        height: 60px;
-        font-size: 18px;
-      }
-      
-      button {
-        padding: 12px 25px;
-        font-size: 16px;
-      }
-    }
-
-    @keyframes confetti-fall {
-      0% { transform: translateY(-100vh) rotate(0deg); }
-      100% { transform: translateY(100vh) rotate(360deg); }
-    }
-
-    .confetti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      z-index: 999;
-      animation: confetti-fall 3s linear forwards;
     }
   </style>
 </head>
@@ -205,11 +87,6 @@
   <h1>Guess Number Game</h1>
 
   <div class="game-box">
-    <div class="player-info">
-      <div class="player-name player1" id="player1-name">Player 1: You</div>
-      <div class="player-name player2" id="player2-name">Player 2: Waiting...</div>
-    </div>
-    
     <div id="timer">Time left: 60s</div>
     <p>Enter your 4-digit guess (no 0s, no repeats):</p>
     <div class="input-group">
@@ -222,23 +99,11 @@
     <div id="result"></div>
     <div id="history"></div>
     <button onclick="restartGame()">Restart</button>
-    
-    <div class="chat-box">
-      <div id="messages"></div>
-      <input id="chat-input" placeholder="Type your message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
-
-  <div id="winner-display" class="winner-display" style="display: none;">
-    <h2>🎉 You Won! 🎉</h2>
-    <p id="winner-message"></p>
-    <button onclick="hideWinnerDisplay()">Continue</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
@@ -255,23 +120,16 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get("room");
-    const playerName = localStorage.getItem('playerName') || prompt("Enter your name:") || "Player";
-    localStorage.setItem('playerName', playerName);
 
     let secret = [];
     let history = [];
     let timeLeft = 60;
     let gameOver = false;
-    let isPlayer1 = false;
-    let playerId = Math.random().toString(36).substring(2, 9);
+    let playerName = "";
 
     const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
     const submitBtn = document.getElementById("submit-btn");
     const resultEl = document.getElementById("result");
-    const player1NameEl = document.getElementById("player1-name");
-    const player2NameEl = document.getElementById("player2-name");
-    const winnerDisplay = document.getElementById("winner-display");
-    const winnerMessage = document.getElementById("winner-message");
 
     inputs.forEach((input, idx) => {
       input.addEventListener("input", () => {
@@ -286,69 +144,26 @@
     onSnapshot(gameRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        
-        // Set player positions
-        if (!data.player1Id) {
-          isPlayer1 = true;
-          updateDoc(gameRef, { 
-            player1Id: playerId,
-            player1Name: playerName,
-            createdAt: new Date().toISOString()
-          });
-        } else if (!data.player2Id && data.player1Id !== playerId) {
-          updateDoc(gameRef, { 
-            player2Id: playerId,
-            player2Name: playerName,
-            joined: true,
-            joinedAt: new Date().toISOString()
-          });
+
+        // Get current player's name
+        if (data.names && data.myId) {
+          playerName = data.names[data.myId] || "Unknown";
         }
-        
-        // Update player displays
-        player1NameEl.innerText = `Player 1: ${data.player1Name || 'Waiting...'}`;
-        player2NameEl.innerText = `Player 2: ${data.player2Name || 'Waiting...'}`;
-        
+
         if (!data.joined) {
           resultEl.innerText = "Waiting for another player to join...";
           submitBtn.disabled = true;
         } else {
-          secret = data.secret || [];
-          if (secret.length === 4) {
-            resultEl.innerText = "Game started! Make your guess!";
-            submitBtn.disabled = false;
-            if (!timeLeft) startTimer();
-          }
+          secret = data.secret;
+          resultEl.innerText = "Player joined! Start guessing!";
+          submitBtn.disabled = false;
+          startTimer();
         }
 
-        // Update game history
-        if (data.rounds) {
-          history = data.rounds.map(round => {
-            const time = new Date(round.timestamp).toLocaleTimeString();
-            return `${time} - ${round.playerName}: ${round.guess} → ${round.result}`;
-          });
-          document.getElementById("history").innerText = history.join("\n");
-        }
-
-        // Handle winner
         if (data.winner && !gameOver) {
           gameOver = true;
-          clearInterval(timerInterval);
+          resultEl.innerText = `❌ Game over! Player ${data.winner} won.`;
           disableInputs();
-          
-          if (data.winner === playerId) {
-            showWinnerDisplay(`You guessed the number ${data.secret.join('')} correctly!`);
-            createConfetti();
-          } else {
-            const winnerName = data.winner === data.player1Id ? data.player1Name : data.player2Name;
-            resultEl.innerText = `Game over! ${winnerName} guessed the number ${data.secret.join('')} correctly!`;
-          }
-        }
-
-        // Update chat
-        if (data.messages) {
-          document.getElementById("messages").innerHTML = data.messages
-            .map(msg => `<div><strong>${msg.sender}:</strong> ${msg.text}</div>`)
-            .join('');
         }
       } else {
         resultEl.innerText = "Game not found.";
@@ -356,20 +171,17 @@
       }
     });
 
-    let timerInterval;
     function startTimer() {
-      timeLeft = 60;
       const timerDisplay = document.getElementById("timer");
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
+      const interval = setInterval(() => {
         if (gameOver) {
-          clearInterval(timerInterval);
+          clearInterval(interval);
           return;
         }
         timeLeft--;
         timerDisplay.innerText = `Time left: ${timeLeft}s`;
         if (timeLeft <= 0) {
-          clearInterval(timerInterval);
+          clearInterval(interval);
           resultEl.innerText = "⏰ Time's up!";
           disableInputs();
         }
@@ -401,74 +213,25 @@
         }
       }
 
-      const guessStr = guess.join("");
-      const resultStr = `Right place: ${correctPosition}, Right number: ${correctNumber}`;
-      const roundInfo = {
-        playerId,
-        playerName,
-        guess: guessStr,
-        result: resultStr,
-        timestamp: new Date().toISOString()
-      };
+      const feedback = `${playerName}: ${guess.join("")} → Right place: ${correctPosition}, Right number: ${correctNumber}`;
+      history.unshift(feedback);
+      document.getElementById("history").innerText = history.join("\n");
 
-      // Clear inputs
       inputs.forEach(input => input.value = "");
       inputs[0].focus();
 
       if (correctPosition === 4) {
-        await updateDoc(gameRef, { 
-          winner: playerId,
-          rounds: arrayUnion(roundInfo)
-        });
+        resultEl.innerText = "🎉 You guessed it! Game over.";
+        disableInputs();
+        gameOver = true;
+        await updateDoc(gameRef, { winner: playerName });
       } else {
-        await updateDoc(gameRef, { 
-          rounds: arrayUnion(roundInfo)
-        });
-        resultEl.innerText = `Your guess: ${guessStr}\nCorrect position: ${correctPosition}\nCorrect number: ${correctNumber}`;
+        resultEl.innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
       }
     }
 
     window.restartGame = function () {
       window.location.reload();
-    }
-
-    window.sendMessage = async function () {
-      const message = document.getElementById("chat-input").value;
-      if (!message) return;
-      
-      await updateDoc(gameRef, {
-        messages: arrayUnion({
-          sender: playerName,
-          text: message,
-          timestamp: new Date().toISOString()
-        })
-      });
-      document.getElementById("chat-input").value = '';
-    }
-
-    window.showWinnerDisplay = function(message) {
-      winnerMessage.innerText = message;
-      winnerDisplay.style.display = "flex";
-    }
-
-    window.hideWinnerDisplay = function() {
-      winnerDisplay.style.display = "none";
-    }
-
-    function createConfetti() {
-      const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
-      for (let i = 0; i < 100; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.left = Math.random() * window.innerWidth + 'px';
-        confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
-        document.body.appendChild(confetti);
-        
-        setTimeout(() => {
-          confetti.remove();
-        }, 3000);
-      }
     }
   </script>
 </body>
