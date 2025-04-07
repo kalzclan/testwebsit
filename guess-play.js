@@ -118,13 +118,13 @@
               joined: true,
               joinedAt: new Date().toISOString()
             });
-            player2NameEl.innerText = `Player 2: ${playerName}`;
+            player2NameEl.innerText = `Player 2: enemy`;
           }
           
           // Load player names from users collection
           if (data.player1Id) {
             const player1Data = await getDoc(doc(db, "users", data.player1Id));
-            player1NameEl.innerText = `Player 1: ${player1Data.exists() ? player1Data.data().name : 'Unknown'}`;
+            player1NameEl.innerText = `Player 1: kbsol`;
           }
           
           if (data.player2Id) {
