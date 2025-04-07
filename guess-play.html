@@ -3,93 +3,14 @@
 <head>
     <title>Guess Number Play - HABESHA GAMES</title>
     <style>
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-            color: white;
-            text-align: center;
-            padding: 40px 20px;
-            min-height: 100vh;
-        }
-
-        h1 {
-            color: #00ffcc;
-            margin-bottom: 30px;
-        }
-
-        .game-box {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 400px;
-            margin: auto;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-        }
-
-        .input-row {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        input {
-            font-size: 18px;
-            padding: 12px;
-            width: 60px;
-            text-align: center;
-            border: 1px solid #00ffcc;
-            border-radius: 10px;
-            background: #1a1a2e;
-            color: white;
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 12px 25px;
-            font-size: 16px;
-            background-color: #00ffcc;
-            color: black;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #00e6b8;
-        }
-
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
-            white-space: pre-wrap;
-        }
-
-        #history {
-            margin-top: 30px;
-            font-size: 16px;
-            max-height: 200px;
-            overflow-y: auto;
-            text-align: left;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        #timer {
-            font-size: 18px;
-            margin-top: 10px;
-        }
-        #gameIdDisplay{
-            margin-top: 10px;
-            font-size: 16px;
-        }
+        /* ... (Your CSS styles) ... */
     </style>
 </head>
 <body>
     <h1>Guess Number Game</h1>
     <div class="game-box">
         <button onclick="startGame()">Start Game (Host)</button>
-        <button onclick="joinGame()">Join Game (Player)</button>
+        <button onclick="askForGameId()">Join Game (Player)</button>
         <p id="gameIdDisplay"></p>
         <p>Enter your 4-digit guess (no 0s, no repeats):</p>
         <div class="input-row">
@@ -109,13 +30,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database-compat.js"></script>
     <script>
         const firebaseConfig = {
-          apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
-      authDomain: "habeshagames-1f999.firebaseapp.com",
-      projectId: "habeshagames-1f999",
-      storageBucket: "habeshagames-1f999.appspot.com",
-      messagingSenderId: "919693990773",
-      appId: "1:919693990773:web:f32664a1b944b38101113c",
-      measurementId: "G-G5C67RMJDY"
+            // Replace with your Firebase config
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
@@ -160,15 +82,17 @@
             });
         }
 
-        function joinGame() {
-            gameId = prompt("Enter game ID:");
-            if (gameId) {
-                database.ref('games/' + gameId + '/playerJoined').set(true);
-                enableInputs();
-                startTimer(gameId);
-                database.ref('games/'+gameId+'/answer').on('value', snapshot => {
-                    answer = snapshot.val();
-                });
+        function askForGameId() {
+            if (!isHost) {
+                gameId = prompt("Enter game ID:");
+                if (gameId) {
+                    database.ref('games/' + gameId + '/playerJoined').set(true);
+                    enableInputs();
+                    startTimer(gameId);
+                    database.ref('games/' + gameId + '/answer').on('value', snapshot => {
+                        answer = snapshot.val();
+                    });
+                }
             }
         }
 
@@ -192,7 +116,7 @@
 
             const history = document.getElementById('history');
             history.innerText += `\nGuess: ${guess} → Numbers: ${correctNum}, Positions: ${correctPos}`;
-            database.ref('games/'+gameId+'/history').set(history.innerText);
+            database.ref('games/' + gameId + '/history').set(history.innerText);
 
             g1.value = g2.value = g3.value = g4.value = '';
 
@@ -228,14 +152,14 @@
                 window.location.reload();
             }
         }
-        function disableInputs(){
+        function disableInputs() {
             document.getElementById('submit-btn').disabled = true;
             document.getElementById('g1').disabled = true;
             document.getElementById('g2').disabled = true;
             document.getElementById('g3').disabled = true;
             document.getElementById('g4').disabled = true;
         }
-        function enableInputs(){
+        function enableInputs() {
             document.getElementById('submit-btn').disabled = false;
             document.getElementById('g1').disabled = false;
             document.getElementById('g2').disabled = false;
