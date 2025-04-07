@@ -5,7 +5,8 @@ import {
   getDoc,
   onSnapshot, 
   updateDoc, 
-  arrayUnion
+  arrayUnion,
+  increment
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -47,6 +48,59 @@ async function fetchPlayerName(playerId, element) {
       ? `Player 1: ${docSnap.data().username}`
       : `Player 2: ${docSnap.data().username}`;
   }
+}
+
+async function updateUserBalance(userId, amount) {
+  const userRef = doc(db, "users", userId);
+  try {
+    await updateDoc(userRef, {
+      balance: increment(amount)
+    });
+    const updatedUser = await getDoc(userRef);
+    return updatedUser.data().balance;
+  } catch (error) {
+    console.error("Error updating balance:", error);
+    return null;
+  }
+}
+
+async function handleGameEnd(winnerId) {
+  try {
+    const gameData = (await getDoc(gameRef)).data();
+    if (!gameData) return;
+    
+    const loserId = winnerId === gameData.player1Id ? gameData.player2Id : gameData.player1Id;
+    
+    // Update balances
+    const winnerBalance = await updateUserBalance(winnerId, 50);
+    const loserBalance = await updateUserBalance(loserId, -50);
+    
+    // Show appropriate messages
+    if (winnerId === userId) {
+      showWinnerDisplay(`You won! +50 coins! ${winnerBalance !== null ? `(New balance: ${winnerBalance})` : ''}`);
+      createConfetti();
+    } else {
+      showLoserDisplay(`You lost! -50 coins! ${loserBalance !== null ? `(New balance: ${loserBalance})` : ''}`);
+    }
+  } catch (error) {
+    console.error("Error handling game end:", error);
+    if (winnerId === userId) {
+      showWinnerDisplay("You won! (Couldn't update balance)");
+    } else {
+      showLoserDisplay("You lost! (Couldn't update balance)");
+    }
+  }
+}
+
+function showLoserDisplay(message) {
+  const loserDisplay = document.getElementById("loser-display");
+  const loserMessage = document.getElementById("loser-message");
+  loserMessage.innerText = message;
+  loserDisplay.style.display = "flex";
+}
+
+window.hideLoserDisplay = function() {
+  document.getElementById("loser-display").style.display = "none";
 }
 
 inputs.forEach((input, idx) => {
@@ -105,14 +159,7 @@ async function initGame() {
       if (data.winner && !gameOver) {
         gameOver = true;
         disableInputs();
-        
-        if (data.winner === userId) {
-          showWinnerDisplay(`You guessed the number ${data.secret.join('')} correctly!`);
-          createConfetti();
-        } else {
-          const winnerName = await fetchPlayerName(data.winner);
-          resultEl.innerText = `Game over! ${winnerName} guessed the number correctly!`;
-        }
+        await handleGameEnd(data.winner);
       }
     } else {
       resultEl.innerText = "Game not found.";
@@ -160,7 +207,7 @@ window.submitGuess = async function () {
   for (let i = 0; i < 4; i++) {
     if (guess[i] === secret[i]) {
       correctPosition++;
-      correctNumber++; // Increment both if correct position
+      correctNumber++;
     } else if (secret.includes(guess[i])) {
       correctNumber++;
     }
@@ -187,7 +234,7 @@ window.submitGuess = async function () {
     await updateDoc(gameRef, { 
       rounds: arrayUnion(roundInfo)
     });
-  //  resultEl.innerText = `Your guess: ${guessStr}\nCorrect position: ${correctPosition}\nCorrect number: ${correctNumber}`;
+    resultEl.innerText = `Your guess: ${guessStr}\nCorrect position: ${correctPosition}\nCorrect number: ${correctNumber}`;
   }
 }
 
@@ -220,66 +267,4 @@ function createConfetti() {
   }
 }
 
-// ... (previous imports remain the same)
-
-async function updateUserBalance(userId, amount) {
-  const userRef = doc(db, "users", userId);
-  try {
-    await updateDoc(userRef, {
-      balance: increment(amount)
-    });
-  } catch (error) {
-    console.error("Error updating balance:", error);
-  }
-}
-
-async function handleGameEnd(winnerId) {
-  const gameData = (await getDoc(gameRef)).data();
-  const loserId = winnerId === gameData.player1Id ? gameData.player2Id : gameData.player1Id;
-  
-  // Update balances
-  await updateUserBalance(winnerId, 50);
-  await updateUserBalance(loserId, -50);
-  
-  // Show winner/loser displays
-  if (winnerId === userId) {
-    showWinnerDisplay(`You won! +50 coins!`);
-    createConfetti();
-  } else {
-    showLoserDisplay(`You lost! -50 coins!`);
-  }
-}
-
-function showLoserDisplay(message) {
-  const loserDisplay = document.getElementById("loser-display");
-  const loserMessage = document.getElementById("loser-message");
-  loserMessage.innerText = message;
-  loserDisplay.style.display = "flex";
-}
-
-// ... (rest of the existing code remains the same until the onSnapshot callback)
-
-onSnapshot(gameRef, async (snap) => {
-  if (snap.exists()) {
-    const data = snap.data();
-    
-    // ... (previous game setup code remains the same)
-
-    // Handle winner
-    if (data.winner && !gameOver) {
-      gameOver = true;
-      disableInputs();
-      await handleGameEnd(data.winner);
-    }
-  } else {
-    resultEl.innerText = "Game not found.";
-    submitBtn.disabled = true;
-  }
-});
-
-// ... (rest of the code remains the same)
-
-
-
 initGame();
-
