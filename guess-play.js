@@ -53,7 +53,9 @@
       const userRef = doc(db, "users", userId);
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
-        document.getElementById("balance").innerText = `Balance: ${docSnap.data().balance}`;
+
+           player1NameEl.innerText = `Player 1: ${docSnap.data().username}`;
+        document.getElementById("username").innerText = `Balance: ${docSnap.data().username}`;
       } else {
         alert("User not found.");
         logout();
@@ -105,7 +107,11 @@
               player1Id: userId,
               createdAt: new Date().toISOString()
             });
-            player1NameEl.innerText = `Player 1: ${playerName}`;
+
+
+
+
+              
           } else if (!data.player2Id && data.player1Id !== userId) {
             await updateDoc(gameRef, { 
               player2Id: userId,
