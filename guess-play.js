@@ -124,7 +124,19 @@
           // Load player names from users collection
           if (data.player1Id) {
             const player1Data = await getDoc(doc(db, "users", data.player1Id));
-            player1NameEl.innerText = `Player 1: kbsol`;
+
+
+
+ const userRef = doc(db, "users", userId);
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+
+           player1NameEl.innerText = `Player 1: ${docSnap.data().username}`;
+       
+      } 
+
+              
+           
           }
           
           if (data.player2Id) {
