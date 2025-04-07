@@ -94,7 +94,7 @@
     // Initialize game
     async function initGame() {
       const userData = await loadUserData(userId);
-      playerName = userData.name;
+      playerName = "kaleab";
       
       onSnapshot(gameRef, async (snap) => {
         if (snap.exists()) {
