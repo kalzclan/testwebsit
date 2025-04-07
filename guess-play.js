@@ -267,6 +267,7 @@
       for (let i = 0; i < 4; i++) {
         if (guess[i] === secret[i]) {
           correctPosition++;
+            correctNumber++;
         } else if (secret.includes(guess[i])) {
           correctNumber++;
         }
