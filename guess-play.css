@@ -256,3 +256,34 @@ button:disabled {
 #history-table tr:last-child td {
   border-bottom: none;
 }
+.loser-display {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  font-size: 2rem;
+  color: #ff5555;
+  text-align: center;
+}
+
+.loser-display button {
+  margin-top: 20px;
+  padding: 12px 25px;
+  font-size: 16px;
+  background-color: #ff5555;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.loser-display button:hover {
+  background-color: #ff3333;
+}
