@@ -27,8 +27,6 @@ const userId = localStorage.getItem('userId') || Math.random().toString(36).subs
 localStorage.setItem('userId', userId);
 
 let secret = [];
-let history = [];
-let timeLeft = 60;
 let gameOver = false;
 let isPlayer1 = false;
 
@@ -39,7 +37,7 @@ const player1NameEl = document.getElementById("player1-name");
 const player2NameEl = document.getElementById("player2-name");
 const winnerDisplay = document.getElementById("winner-display");
 const winnerMessage = document.getElementById("winner-message");
-const chatMessages = document.getElementById("chat-messages");
+const historyTable = document.getElementById("history-table");
 
 async function fetchPlayerName(playerId, element) {
   const userRef = doc(db, "users", playerId);
@@ -95,25 +93,17 @@ async function initGame() {
         if (secret.length === 4) {
           resultEl.innerText = "Game started! Make your guess!";
           submitBtn.disabled = false;
-          if (!timeLeft) startTimer();
         }
       }
 
-      // Update game history (only show current player's guesses)
+      // Update game history in table format
       if (data.rounds) {
-        history = data.rounds
-          .filter(round => round.playerId === userId)
-          .map(round => {
-            const time = new Date(round.timestamp).toLocaleTimeString();
-            return `${time} - You: ${round.guess} → ${round.result}`;
-          });
-        document.getElementById("history").innerText = history.join("\n");
+        updateHistoryTable(data.rounds.filter(round => round.playerId === userId));
       }
 
       // Handle winner
       if (data.winner && !gameOver) {
         gameOver = true;
-        clearInterval(timerInterval);
         disableInputs();
         
         if (data.winner === userId) {
@@ -124,19 +114,6 @@ async function initGame() {
           resultEl.innerText = `Game over! ${winnerName} guessed the number correctly!`;
         }
       }
-
-      // Update chat
-      if (data.messages) {
-        chatMessages.innerHTML = data.messages
-          .map(msg => {
-            const isCurrentUser = msg.senderId === userId;
-            return `<div style="color: ${isCurrentUser ? '#00ffcc' : 'white'}">
-              <strong>${msg.senderName}:</strong> ${msg.text}
-            </div>`;
-          })
-          .join('');
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
     } else {
       resultEl.innerText = "Game not found.";
       submitBtn.disabled = true;
@@ -144,24 +121,23 @@ async function initGame() {
   });
 }
 
-let timerInterval;
-function startTimer() {
-  timeLeft = 60;
-  const timerDisplay = document.getElementById("timer");
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    if (gameOver) {
-      clearInterval(timerInterval);
-      return;
-    }
-    timeLeft--;
-    timerDisplay.innerText = `Time left: ${timeLeft}s`;
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      resultEl.innerText = "⏰ Time's up!";
-      disableInputs();
-    }
-  }, 1000);
+function updateHistoryTable(rounds) {
+  // Clear existing rows except header
+  while (historyTable.rows.length > 1) {
+    historyTable.deleteRow(1);
+  }
+
+  // Add each round as a row
+  rounds.forEach(round => {
+    const row = historyTable.insertRow();
+    const guessCell = row.insertCell(0);
+    const numberCell = row.insertCell(1);
+    const orderCell = row.insertCell(2);
+    
+    guessCell.textContent = round.guess;
+    numberCell.textContent = round.result.split(', ')[1].split(': ')[1]; // Extract correct numbers
+    orderCell.textContent = round.result.split(', ')[0].split(': ')[1]; // Extract correct positions
+  });
 }
 
 function disableInputs() {
@@ -184,6 +160,7 @@ window.submitGuess = async function () {
   for (let i = 0; i < 4; i++) {
     if (guess[i] === secret[i]) {
       correctPosition++;
+      correctNumber++; // Increment both if correct position
     } else if (secret.includes(guess[i])) {
       correctNumber++;
     }
