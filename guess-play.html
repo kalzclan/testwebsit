@@ -1,228 +1,135 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Guess Number Play - HABESHA GAMES</title>
-  <style>
-    body {
-      font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-      color: white;
-      text-align: center;
-      padding: 40px 20px;
-      min-height: 100vh;
-    }
-
-    h1 {
-      color: #00ffcc;
-      margin-bottom: 30px;
-    }
-
-    .game-box {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
-      padding: 30px;
-      max-width: 400px;
-      margin: auto;
-      box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-    }
-
-    .input-group {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 20px 0;
-    }
-
-    input {
-      font-size: 18px;
-      padding: 12px;
-      width: 60px;
-      text-align: center;
-      border: 1px solid #00ffcc;
-      border-radius: 10px;
-      background: #1a1a2e;
-      color: white;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 12px 25px;
-      font-size: 16px;
-      background-color: #00ffcc;
-      color: black;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #00e6b8;
-    }
-
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      white-space: pre-wrap;
-    }
-
-    #history {
-      margin-top: 30px;
-      font-size: 16px;
-      max-height: 200px;
-      overflow-y: auto;
-      text-align: left;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
-      border-radius: 10px;
-    }
-
-    #timer {
-      font-size: 20px;
-      margin-top: 10px;
-      color: #ffcc00;
-    }
-  </style>
+    <title>Guess Number Play - HABESHA GAMES</title>
+    <style>
+        body { /* ... (Your existing styles) ... */ }
+        .correct-position { color: green; }
+        .correct-number { color: orange; }
+    </style>
 </head>
 <body>
-  <h1>Guess Number Game</h1>
-
-  <div class="game-box">
-    <div id="timer">Time left: 60s</div>
-    <p>Enter your 4-digit guess (no 0s, no repeats):</p>
-    <div class="input-group">
-      <input id="g1" maxlength="1" type="number" min="1" max="9">
-      <input id="g2" maxlength="1" type="number" min="1" max="9">
-      <input id="g3" maxlength="1" type="number" min="1" max="9">
-      <input id="g4" maxlength="1" type="number" min="1" max="9">
+    <h1>Guess Number Game</h1>
+    <div class="game-box">
+        <div id="timer">Time left: 60s</div>
+        <p>Enter your 4-digit guess (no 0s, no repeats):</p>
+        <div class="input-group">
+            <input id="g1" maxlength="1" type="number" min="1" max="9">
+            <input id="g2" maxlength="1" type="number" min="1" max="9">
+            <input id="g3" maxlength="1" type="number" min="1" max="9">
+            <input id="g4" maxlength="1" type="number" min="1" max="9">
+        </div>
+        <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
+        <div id="result"></div>
+        <div id="history"></div>
+        <button onclick="restartGame()">Restart</button>
     </div>
-    <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
-    <div id="result"></div>
-    <div id="history"></div>
-    <button onclick="restartGame()">Restart</button>
-  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
-      authDomain: "habeshagames-1f999.firebaseapp.com",
-      projectId: "habeshagames-1f999",
-      storageBucket: "habeshagames-1f999.appspot.com",
-      messagingSenderId: "919693990773",
-      appId: "1:919693990773:web:f32664a1b944b38101113c",
-      measurementId: "G-G5C67RMJDY"
-    };
+        const firebaseConfig = { /* ... (Your Firebase config) ... */ };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get("room");
+        const playerId = "player1"; // Replace with your player ID logic
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomId = urlParams.get("room");
+        let secret = [];
+        let history = [];
+        let timeLeft = 60;
+        let gameOver = false;
+        let turn = playerId;
 
-    let secret = [];
-    let history = [];
-    let timeLeft = 60;
-    let gameOver = false;
+        const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
+        const submitBtn = document.getElementById("submit-btn");
+        const resultEl = document.getElementById("result");
 
-    const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
-    const submitBtn = document.getElementById("submit-btn");
-    const resultEl = document.getElementById("result");
+        inputs.forEach((input, idx) => {
+            input.addEventListener("input", () => {
+                if (input.value.length === 1 && idx < 3) {
+                    inputs[idx + 1].focus();
+                }
+            });
+        });
 
-    inputs.forEach((input, idx) => {
-      input.addEventListener("input", () => {
-        if (input.value.length === 1 && idx < 3) {
-          inputs[idx + 1].focus();
+        const gameRef = doc(db, "games", roomId);
+
+        onSnapshot(gameRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                if (!data.joined) {
+                    resultEl.innerText = "Waiting for another player to join...";
+                    submitBtn.disabled = true;
+                } else {
+                    secret = data.secret;
+                    resultEl.innerText = "Player joined! Start guessing!";
+                    submitBtn.disabled = (turn !== playerId);
+                    inputs.forEach(input => input.disabled = (turn !== playerId));
+                    startTimer();
+                }
+
+                if (data.winner && !gameOver) {
+                    gameOver = true;
+                    resultEl.innerText = `🎉 Game over! Player ${data.winner} won.`;
+                    disableInputs();
+                }
+                turn = data.turn;
+                submitBtn.disabled = (turn !== playerId);
+                inputs.forEach(input => input.disabled = (turn !== playerId));
+            } else {
+                resultEl.innerText = "Game not found.";
+                submitBtn.disabled = true;
+            }
+        });
+
+        function startTimer() { /* ... (Your timer logic) ... */ }
+
+        function disableInputs() { /* ... (Your disableInputs logic) ... */ }
+
+        window.submitGuess = async function () {
+            if (gameOver || turn !== playerId) return;
+
+            const guess = inputs.map(input => parseInt(input.value));
+            if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
+                resultEl.innerText = "Invalid guess. Use 1-9 without repeats.";
+                return;
+            }
+
+            let correctPosition = 0;
+            let correctNumber = 0;
+            let feedback = "";
+            for (let i = 0; i < 4; i++) {
+                if (guess[i] === secret[i]) {
+                    correctPosition++;
+                    feedback += `<span class="correct-position">${guess[i]}</span>`;
+                } else if (secret.includes(guess[i])) {
+                    correctNumber++;
+                    feedback += `<span class="correct-number">${guess[i]}</span>`;
+                } else {
+                    feedback += guess[i];
+                }
+            }
+
+            history.unshift(`Guess: ${feedback}`);
+            document.getElementById("history").innerText = history.join("\n");
+
+            if (correctPosition === 4) {
+                resultEl.innerText = "🎉 You guessed it! Game over.";
+                disableInputs();
+                gameOver = true;
+                await updateDoc(gameRef, { winner: playerId });
+            } else {
+                resultEl.innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
+                await updateDoc(gameRef, { turn: (playerId === "player1")? "player2" : "player1"});
+            }
+
+            inputs.forEach(input => input.value = "");
         }
-      });
-    });
 
-    const gameRef = doc(db, "games", roomId);
-
-    onSnapshot(gameRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (!data.joined) {
-          resultEl.innerText = "Waiting for another player to join...";
-          submitBtn.disabled = true;
-        } else {
-          secret = data.secret;
-          resultEl.innerText = "Player joined! Start guessing!";
-          submitBtn.disabled = false;
-          startTimer();
-        }
-
-        if (data.winner && !gameOver) {
-          gameOver = true;
-          resultEl.innerText = `❌ Game over! Player ${data.winner} won.`;
-          disableInputs();
-        }
-      } else {
-        resultEl.innerText = "Game not found.";
-        submitBtn.disabled = true;
-      }
-    });
-
-    function startTimer() {
-      const timerDisplay = document.getElementById("timer");
-      const interval = setInterval(() => {
-        if (gameOver) {
-          clearInterval(interval);
-          return;
-        }
-        timeLeft--;
-        timerDisplay.innerText = `Time left: ${timeLeft}s`;
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          resultEl.innerText = "⏰ Time's up!";
-          disableInputs();
-        }
-      }, 1000);
-    }
-
-    function disableInputs() {
-      inputs.forEach(input => input.disabled = true);
-      submitBtn.disabled = true;
-    }
-
-    window.submitGuess = async function () {
-      if (gameOver) return;
-
-      const guess = inputs.map(input => parseInt(input.value));
-      if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
-        resultEl.innerText = "Invalid guess. Use 1-9 without repeats.";
-        return;
-      }
-
-      let correctPosition = 0;
-      let correctNumber = 0;
-
-      for (let i = 0; i < 4; i++) {
-        if (guess[i] === secret[i]) {
-          correctPosition++;
-        } else if (secret.includes(guess[i])) {
-          correctNumber++;
-        }
-      }
-
-      const feedback = `Guess: ${guess.join("")} → Right place: ${correctPosition}, Right number: ${correctNumber}`;
-      history.unshift(feedback);
-      document.getElementById("history").innerText = history.join("\n");
-
-      if (correctPosition === 4) {
-        resultEl.innerText = "🎉 You guessed it! Game over.";
-        disableInputs();
-        gameOver = true;
-        await updateDoc(gameRef, { winner: "someone" }); // Replace with actual player ID if needed
-      } else {
-        resultEl.innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
-      }
-    }
-
-    window.restartGame = function () {
-      window.location.reload();
-    }
-  </script>
+        window.restartGame = function () { /* ... (Your restartGame logic) ... */ }
+    </script>
 </body>
 </html>
