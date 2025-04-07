@@ -97,5 +97,54 @@
     <div id="history"></div>
     <button onclick="restartGame()">Restart</button>
   </div>
+
+  <script>
+    function submitGuess() {
+      const inputs = [g1.value, g2.value, g3.value, g4.value];
+      const guess = inputs.join('');
+      if (new Set(inputs).size !== 4 || guess.includes('0')) {
+        alert("Guess must have 4 unique digits between 1-9");
+        return;
+      }
+
+      // Logic for matching guess to the answer (assuming answer exists)
+      const answer = '1234'; // example only - replace with Firebase logic
+      let correctNum = 0;
+      let correctPos = 0;
+
+      for (let i = 0; i < 4; i++) {
+        if (guess[i] === answer[i]) correctPos++;
+        if (answer.includes(guess[i])) correctNum++;
+      }
+
+      document.getElementById('result').innerText = `Correct Numbers: ${correctNum}, Correct Positions: ${correctPos}`;
+
+      const history = document.getElementById('history');
+      history.innerText += `\nGuess: ${guess} → Numbers: ${correctNum}, Positions: ${correctPos}`;
+
+      g1.value = g2.value = g3.value = g4.value = '';
+    }
+
+    function restartGame() {
+      if (confirm("Do you want to restart the game?")) {
+        window.location.reload();
+      }
+    }
+
+    let totalSeconds = 180;
+    const timerEl = document.getElementById("timer");
+    const timer = setInterval(() => {
+      totalSeconds--;
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      timerEl.innerText = `Time left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+      if (totalSeconds <= 0) {
+        clearInterval(timer);
+        timerEl.innerText = "Time's up!";
+        document.getElementById("submit-btn").disabled = true;
+      }
+    }, 1000);
+  </script>
 </body>
 </html>
