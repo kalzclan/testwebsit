@@ -233,3 +233,26 @@ button:disabled {
   z-index: 999;
   animation: confetti-fall 3s linear forwards;
 }
+#history-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#history-table th, #history-table td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#history-table th {
+  background: rgba(0, 255, 204, 0.2);
+  color: #00ffcc;
+}
+
+#history-table tr:last-child td {
+  border-bottom: none;
+}
