@@ -1,167 +1,259 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Number Guessing Game</title>
+  <title>Guess Number Play - HABESHA GAMES</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+      color: white;
+      text-align: center;
+      padding: 20px 10px;
+      min-height: 100vh;
       margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 50px auto;
-      padding: 20px;
-      background: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
 
     h1 {
+      color: #00ffcc;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+
+    .game-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 100%;
+      margin: 0 auto;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .player-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+    }
+
+    .player-name {
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+
+    .player1 {
+      background: rgba(0, 255, 204, 0.2);
+    }
+
+    .player2 {
+      background: rgba(255, 0, 204, 0.2);
+    }
+
+    .input-group {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+
+    input {
+      font-size: 16px;
+      padding: 10px;
+      width: 50px;
+      height: 50px;
+      text-align: center;
+      border: 1px solid #00ffcc;
+      border-radius: 10px;
+      background: #1a1a2e;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin: 10px 5px;
+      padding: 10px 15px;
+      font-size: 14px;
+      background-color: #00ffcc;
+      color: black;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      min-width: 100px;
+    }
+
+    button:hover {
+      background-color: #00e6b8;
+    }
+
+    button:disabled {
+      background-color: #666;
+      cursor: not-allowed;
+    }
+
+    #result {
+      margin-top: 15px;
+      font-size: 16px;
+      white-space: pre-wrap;
+      min-height: 50px;
+    }
+
+    #history {
+      margin-top: 20px;
+      font-size: 14px;
+      max-height: 150px;
+      overflow-y: auto;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    #timer {
+      font-size: 18px;
+      margin: 10px 0;
+      color: #ffcc00;
+    }
+
+    .round-info {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+
+    .winner-display {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      font-size: 2rem;
+      color: gold;
       text-align: center;
     }
 
-    #guessInput {
-      width: calc(100% - 22px);
-      padding: 10px;
-      margin-bottom: 10px;
+    @media (min-width: 600px) {
+      .game-box {
+        max-width: 400px;
+        padding: 30px;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      input {
+        width: 60px;
+        height: 60px;
+        font-size: 18px;
+      }
+      
+      button {
+        padding: 12px 25px;
+        font-size: 16px;
+      }
     }
 
-    #submitGuess {
-      width: 100%;
-      padding: 10px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
+    @keyframes confetti-fall {
+      0% { transform: translateY(-100vh) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(360deg); }
     }
 
-    #submitGuess:hover {
-      background-color: #0056b3;
-    }
-
-    #message {
-      margin-top: 20px;
-      font-weight: bold;
-    }
-
-    #guessHistory {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #efefef;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    #playerNames {
-      margin-bottom: 10px;
-      font-weight: bold;
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      z-index: 999;
+      animation: confetti-fall 3s linear forwards;
     }
   </style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>Number Guessing Game</h1>
-    <div id="playerNames"></div>
-    <input type="number" id="guessInput" placeholder="Enter your guess (1-100)" />
-    <button id="submitGuess">Submit Guess</button>
-    <div id="message"></div>
-    <div id="guessHistory"></div>
+  <h1>Guess Number Game</h1>
+
+  <div class="game-box">
+    <div class="player-info">
+      <div class="player-name player1" id="player1-name">Player 1: Loading...</div>
+      <div class="player-name player2" id="player2-name">Player 2: Waiting...</div>
+    </div>
+
+    <div id="timer">Time left: 60s</div>
+    <p>Enter your 4-digit guess (no 0s, no repeats):</p>
+    <div class="input-group">
+      <input id="g1" maxlength="1" type="number" min="1" max="9">
+      <input id="g2" maxlength="1" type="number" min="1" max="9">
+      <input id="g3" maxlength="1" type="number" min="1" max="9">
+      <input id="g4" maxlength="1" type="number" min="1" max="9">
+    </div>
+    <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
+    <div id="result"></div>
+    <div id="history"></div>
+    <button onclick="restartGame()">Restart</button>
+  </div>
+
+  <div id="winner-display" class="winner-display" style="display: none;">
+    <h2>🎉 You Won! 🎉</h2>
+    <p id="winner-message"></p>
+    <button onclick="hideWinnerDisplay()">Continue</button>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import {
-      getFirestore,
-      doc,
-      setDoc,
-      getDoc,
-      updateDoc,
-      arrayUnion,
-      onSnapshot
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    import {
-      getAuth,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCmVaEuUXLZtNWGHDN1DTfwl07i0KCE1wQ",
-      authDomain: "fir-auth-b4c65.firebaseapp.com",
-      projectId: "fir-auth-b4c65",
-      storageBucket: "fir-auth-b4c65.appspot.com",
-      messagingSenderId: "1044317167928",
-      appId: "1:1044317167928:web:e9a2c05494b2501eaa958e",
-      measurementId: "G-C8Z3G1PZ9E"
-    };
-
+    const firebaseConfig = { /* config omitted for brevity */ };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth();
 
-    let userId;
-    let gameDocRef;
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get("room");
+    const userId = localStorage.getItem('userId') || Math.random().toString(36).substring(2, 9);
+    localStorage.setItem('userId', userId);
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        userId = user.uid;
-        gameDocRef = doc(db, "games", userId);
+    let playerName = "Player";
+    async function loadUserData(userId) {
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
+      return userSnap.exists() ? userSnap.data() : { name: "Player" };
+    }
 
-        const gameDoc = await getDoc(gameDocRef);
-        if (!gameDoc.exists()) {
-          await setDoc(gameDocRef, {
-            numberToGuess: Math.floor(Math.random() * 100) + 1,
-            guesses: []
-          });
+    async function initGame() {
+      const userData = await loadUserData(userId);
+      playerName = userData.name;
+
+      const gameRef = doc(db, "games", roomId);
+      onSnapshot(gameRef, async (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+
+        if (data.player1Id) {
+          const p1 = await getDoc(doc(db, "users", data.player1Id));
+          document.getElementById("player1-name").innerText = `Player 1: ${p1.exists() ? p1.data().name : 'Unknown'}`;
+        }
+        if (data.player2Id) {
+          const p2 = await getDoc(doc(db, "users", data.player2Id));
+          document.getElementById("player2-name").innerText = `Player 2: ${p2.exists() ? p2.data().name : 'Unknown'}`;
         }
 
-        const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
-        const username = userSnap.exists() ? userSnap.data().name : "Player";
-
-        document.getElementById("playerNames").innerText = `Welcome, ${username}!`;
-
-        onSnapshot(gameDocRef, (docSnap) => {
-          const data = docSnap.data();
-          const history = data.guesses
-            .map(round => `You: ${round.guess} → ${round.result}`)
-            .join("\n");
-          document.getElementById("guessHistory").innerText = history;
-        });
-      }
-    });
-
-    document.getElementById("submitGuess").addEventListener("click", async () => {
-      const guess = parseInt(document.getElementById("guessInput").value);
-      const gameSnap = await getDoc(gameDocRef);
-      const gameData = gameSnap.data();
-
-      let message = "";
-      if (guess > gameData.numberToGuess) {
-        message = "Too high!";
-      } else if (guess < gameData.numberToGuess) {
-        message = "Too low!";
-      } else {
-        message = "Correct! Starting new game...";
-        await updateDoc(gameDocRef, {
-          numberToGuess: Math.floor(Math.random() * 100) + 1
-        });
-      }
-
-      await updateDoc(gameDocRef, {
-        guesses: arrayUnion({ guess, result: message })
+        if (data.rounds) {
+          const history = data.rounds
+            .filter(r => r.playerId === userId)
+            .map(r => `You: ${r.guess} → ${r.result}`);
+          document.getElementById("history").innerText = history.join("\n");
+        }
       });
+    }
 
-      document.getElementById("message").innerText = message;
-      document.getElementById("guessInput").value = "";
-    });
+    initGame();
   </script>
 </body>
-
 </html>
