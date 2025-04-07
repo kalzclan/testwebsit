@@ -22,6 +22,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Game constants
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
+let inactivityTimer;
+let lastActivityTime = Date.now();
+
+// Game state variables
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get("room");
 const userId = localStorage.getItem('userId') || Math.random().toString(36).substring(2, 9);
@@ -31,6 +37,7 @@ let secret = [];
 let gameOver = false;
 let isPlayer1 = false;
 
+// DOM elements
 const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
 const submitBtn = document.getElementById("submit-btn");
 const resultEl = document.getElementById("result");
@@ -38,8 +45,11 @@ const player1NameEl = document.getElementById("player1-name");
 const player2NameEl = document.getElementById("player2-name");
 const winnerDisplay = document.getElementById("winner-display");
 const winnerMessage = document.getElementById("winner-message");
+const loserDisplay = document.getElementById("loser-display");
+const loserMessage = document.getElementById("loser-message");
 const historyTable = document.getElementById("history-table");
 
+// Helper Functions
 async function fetchPlayerName(playerId, element) {
   const userRef = doc(db, "users", playerId);
   const docSnap = await getDoc(userRef);
@@ -67,114 +77,72 @@ async function updateUserBalance(userId, amount) {
 async function handleGameEnd(winnerId) {
   try {
     const gameData = (await getDoc(gameRef)).data();
-    if (!gameData) return;
+    if (!gameData || gameData.processed) return;
     
     const loserId = winnerId === gameData.player1Id ? gameData.player2Id : gameData.player1Id;
     
-    // Update balances
-    const winnerBalance = await updateUserBalance(winnerId, 50);
-    const loserBalance = await updateUserBalance(loserId, -50);
-    
+    // Only Player 1 (host) handles money transactions
+    if (isPlayer1) {
+      const winnerBalance = await updateUserBalance(winnerId, 50);
+      const loserBalance = await updateUserBalance(loserId, -50);
+      
+      await updateDoc(gameRef, {
+        processed: true,
+        transactions: arrayUnion({
+          winner: winnerId,
+          loser: loserId,
+          amount: 50,
+          timestamp: new Date().toISOString()
+        })
+      });
+    }
+
     // Show appropriate messages
     if (winnerId === userId) {
-      showWinnerDisplay(`You won! +50 coins! ${winnerBalance !== null ? `(New balance: ${winnerBalance})` : ''}`);
+      showWinnerDisplay("You won! +50 coins!");
       createConfetti();
     } else {
-      showLoserDisplay(`You lost! -50 coins! ${loserBalance !== null ? `(New balance: ${loserBalance})` : ''}`);
+      showLoserDisplay("You lost! -50 coins!");
     }
   } catch (error) {
     console.error("Error handling game end:", error);
-    if (winnerId === userId) {
-      showWinnerDisplay("You won! (Couldn't update balance)");
-    } else {
-      showLoserDisplay("You lost! (Couldn't update balance)");
-    }
   }
 }
 
-function showLoserDisplay(message) {
-  const loserDisplay = document.getElementById("loser-display");
-  const loserMessage = document.getElementById("loser-message");
-  loserMessage.innerText = message;
-  loserDisplay.style.display = "flex";
+async function checkHostInactivity() {
+  const gameData = (await getDoc(gameRef)).data();
+  if (!gameData || gameOver) return;
+
+  const lastUpdate = new Date(gameData.lastUpdate).getTime();
+  const currentTime = Date.now();
+
+  // If host is inactive for more than 10 minutes and game isn't over
+  if (!isPlayer1 && 
+      currentTime - lastUpdate > INACTIVITY_TIMEOUT && 
+      !gameData.winner) {
+    
+    // Guest automatically wins
+    await updateDoc(gameRef, {
+      winner: userId,
+      rounds: arrayUnion({
+        playerId: userId,
+        guess: "AUTO-WIN",
+        result: "Host inactive",
+        timestamp: new Date().toISOString()
+      }),
+      lastUpdate: new Date().toISOString()
+    });
+
+    await handleGameEnd(userId);
+  }
 }
 
-window.hideLoserDisplay = function() {
-  document.getElementById("loser-display").style.display = "none";
-}
-
-inputs.forEach((input, idx) => {
-  input.addEventListener("input", () => {
-    if (input.value.length === 1 && idx < 3) {
-      inputs[idx + 1].focus();
-    }
-  });
-});
-
-const gameRef = doc(db, "games", roomId);
-
-async function initGame() {
-  onSnapshot(gameRef, async (snap) => {
-    if (snap.exists()) {
-      const data = snap.data();
-      
-      // Set player positions
-      if (!data.player1Id) {
-        isPlayer1 = true;
-        await updateDoc(gameRef, { 
-          player1Id: userId,
-          createdAt: new Date().toISOString()
-        });
-        await fetchPlayerName(userId, player1NameEl);
-      } else if (!data.player2Id && data.player1Id !== userId) {
-        await updateDoc(gameRef, { 
-          player2Id: userId,
-          joined: true,
-          joinedAt: new Date().toISOString()
-        });
-        await fetchPlayerName(userId, player2NameEl);
-      }
-      
-      // Load player names
-      if (data.player1Id) await fetchPlayerName(data.player1Id, player1NameEl);
-      if (data.player2Id) await fetchPlayerName(data.player2Id, player2NameEl);
-      
-      if (!data.joined) {
-        resultEl.innerText = "Waiting for another player to join...";
-        submitBtn.disabled = true;
-      } else {
-        secret = data.secret || [];
-        if (secret.length === 4) {
-          resultEl.innerText = "Game started! Make your guess!";
-          submitBtn.disabled = false;
-        }
-      }
-
-      // Update game history in table format
-      if (data.rounds) {
-        updateHistoryTable(data.rounds.filter(round => round.playerId === userId));
-      }
-
-      // Handle winner
-      if (data.winner && !gameOver) {
-        gameOver = true;
-        disableInputs();
-        await handleGameEnd(data.winner);
-      }
-    } else {
-      resultEl.innerText = "Game not found.";
-      submitBtn.disabled = true;
-    }
-  });
-}
-
+// UI Functions
 function updateHistoryTable(rounds) {
-  // Clear existing rows except header
   while (historyTable.rows.length > 1) {
     historyTable.deleteRow(1);
   }
 
-  // Add each round as a row
   rounds.forEach(round => {
     const row = historyTable.insertRow();
     const guessCell = row.insertCell(0);
@@ -182,8 +150,8 @@ function updateHistoryTable(rounds) {
     const orderCell = row.insertCell(2);
     
     guessCell.textContent = round.guess;
-    numberCell.textContent = round.result.split(', ')[1].split(': ')[1]; // Extract correct numbers
-    orderCell.textContent = round.result.split(', ')[0].split(': ')[1]; // Extract correct positions
+    numberCell.textContent = round.result.split(', ')[1].split(': ')[1];
+    orderCell.textContent = round.result.split(', ')[0].split(': ')[1];
   });
 }
 
@@ -192,7 +160,46 @@ function disableInputs() {
   submitBtn.disabled = true;
 }
 
-window.submitGuess = async function () {
+function showWinnerDisplay(message) {
+  winnerMessage.innerText = message;
+  winnerDisplay.style.display = "flex";
+}
+
+function showLoserDisplay(message) {
+  loserMessage.innerText = message;
+  loserDisplay.style.display = "flex";
+}
+
+function createConfetti() {
+  const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+  for (let i = 0; i < 100; i++) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    confetti.style.left = Math.random() * window.innerWidth + 'px';
+    confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
+    document.body.appendChild(confetti);
+    
+    setTimeout(() => {
+      confetti.remove();
+    }, 3000);
+  }
+}
+
+// Event Handlers
+window.hideWinnerDisplay = function() {
+  winnerDisplay.style.display = "none";
+}
+
+window.hideLoserDisplay = function() {
+  loserDisplay.style.display = "none";
+}
+
+window.restartGame = function() {
+  window.location.reload();
+}
+
+window.submitGuess = async function() {
   if (gameOver) return;
 
   const guess = inputs.map(input => parseInt(input.value));
@@ -228,43 +235,106 @@ window.submitGuess = async function () {
   if (correctPosition === 4) {
     await updateDoc(gameRef, { 
       winner: userId,
-      rounds: arrayUnion(roundInfo)
+      rounds: arrayUnion(roundInfo),
+      lastUpdate: new Date().toISOString()
     });
   } else {
     await updateDoc(gameRef, { 
-      rounds: arrayUnion(roundInfo)
+      rounds: arrayUnion(roundInfo),
+      lastUpdate: new Date().toISOString()
     });
     resultEl.innerText = `Your guess: ${guessStr}\nCorrect position: ${correctPosition}\nCorrect number: ${correctNumber}`;
   }
 }
 
-window.restartGame = function () {
-  window.location.reload();
+// Input handling
+inputs.forEach((input, idx) => {
+  input.addEventListener("input", () => {
+    if (input.value.length === 1 && idx < 3) {
+      inputs[idx + 1].focus();
+    }
+  });
+});
+
+// Game Initialization
+const gameRef = doc(db, "games", roomId);
+
+async function initGame() {
+  onSnapshot(gameRef, async (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      lastActivityTime = Date.now();
+      
+      // Update last activity timestamp
+      await updateDoc(gameRef, {
+        lastUpdate: new Date().toISOString()
+      });
+
+      // Set player positions
+      if (!data.player1Id) {
+        isPlayer1 = true;
+        await updateDoc(gameRef, { 
+          player1Id: userId,
+          createdAt: new Date().toISOString(),
+          lastUpdate: new Date().toISOString()
+        });
+        await fetchPlayerName(userId, player1NameEl);
+      } else if (!data.player2Id && data.player1Id !== userId) {
+        await updateDoc(gameRef, { 
+          player2Id: userId,
+          joined: true,
+          joinedAt: new Date().toISOString(),
+          lastUpdate: new Date().toISOString()
+        });
+        await fetchPlayerName(userId, player2NameEl);
+      }
+      
+      // Load player names
+      if (data.player1Id) await fetchPlayerName(data.player1Id, player1NameEl);
+      if (data.player2Id) await fetchPlayerName(data.player2Id, player2NameEl);
+      
+      if (!data.joined) {
+        resultEl.innerText = "Waiting for another player to join...";
+        submitBtn.disabled = true;
+      } else {
+        secret = data.secret || [];
+        if (secret.length === 4) {
+          resultEl.innerText = "Game started! Make your guess!";
+          submitBtn.disabled = false;
+          
+          // Start inactivity check
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(checkHostInactivity, INACTIVITY_TIMEOUT);
+        }
+      }
+
+      // Update game history
+      if (data.rounds) {
+        updateHistoryTable(data.rounds.filter(round => round.playerId === userId));
+      }
+
+      // Handle winner
+      if (data.winner && !gameOver) {
+        gameOver = true;
+        disableInputs();
+        await handleGameEnd(data.winner);
+      }
+    } else {
+      resultEl.innerText = "Game not found.";
+      submitBtn.disabled = true;
+    }
+  });
 }
 
-window.showWinnerDisplay = function(message) {
-  winnerMessage.innerText = message;
-  winnerDisplay.style.display = "flex";
-}
-
-window.hideWinnerDisplay = function() {
-  winnerDisplay.style.display = "none";
-}
-
-function createConfetti() {
-  const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
-  for (let i = 0; i < 100; i++) {
-    const confetti = document.createElement('div');
-    confetti.className = 'confetti';
-    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    confetti.style.left = Math.random() * window.innerWidth + 'px';
-    confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
-    document.body.appendChild(confetti);
-    
-    setTimeout(() => {
-      confetti.remove();
-    }, 3000);
+// Cleanup on page exit
+window.addEventListener('beforeunload', async () => {
+  if (isPlayer1 && !gameOver) {
+    await updateDoc(gameRef, {
+      lastUpdate: new Date().toISOString()
+    });
   }
-}
+  clearTimeout(inactivityTimer);
+});
 
+// Start the game
 initGame();
