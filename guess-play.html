@@ -15,7 +15,7 @@
       <div class="player-name player2" id="player2-name">Player 2: Waiting...</div>
     </div>
     
-    <i class="fas fa-comment-dots chat-icon" onclick="toggleChat()"></i>
+  
     
     <div id="timer">Time left: 60s</div>
     <p>Enter your 4-digit guess (no 0s, no repeats):</p>
@@ -28,20 +28,10 @@
     <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
     <div id="result"></div>
     <div id="history"></div>
-    <button onclick="restartGame()">Restart</button>
+  
   </div>
 
-  <div class="chat-popup" id="chat-popup">
-    <div class="chat-header">
-      <h3>Chat</h3>
-      <button class="close-chat" onclick="toggleChat()">&times;</button>
-    </div>
-    <div id="chat-messages"></div>
-    <div class="chat-input-group">
-      <input type="text" id="chat-message-input" placeholder="Type your message...">
-      <button class="send-chat-btn" onclick="sendMessage()">Send</button>
-    </div>
-  </div>
+ 
 
   <div id="winner-display" class="winner-display" style="display: none;">
     <h2>🎉 You Won! 🎉</h2>
@@ -49,6 +39,6 @@
     <button onclick="hideWinnerDisplay()">Continue</button>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <script type="module" src="guess-play.js"></script>
 </body>
 </html>
