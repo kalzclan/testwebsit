@@ -27,6 +27,12 @@
     </div>
     <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
     <div id="result"></div>
+    <!-- Add this alongside the winner display -->
+<div id="loser-display" class="loser-display" style="display: none;">
+  <h2>😢 You Lost! 😢</h2>
+  <p id="loser-message"></p>
+  <button onclick="hideLoserDisplay()">Continue</button>
+</div>
     <!-- Add this where your history display was -->
 <table id="history-table">
   <thead>
