@@ -51,7 +51,7 @@
       background-color: #00e6b8;
     }
 
-    #result {
+    #status {
       margin-top: 20px;
       font-size: 18px;
     }
@@ -154,9 +154,13 @@
       });
 
       document.getElementById("status").innerText = `Joined game! Ready to play.`;
-      // Redirect to actual game logic page (optional)
+      // Optional: redirect to game page
       // window.location.href = `/guess-play.html?room=${roomId}`;
     }
+
+    // 🔓 Make the functions available globally
+    window.createGame = createGame;
+    window.joinGame = joinGame;
   </script>
 </body>
 </html>
