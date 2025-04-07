@@ -287,3 +287,13 @@ button:disabled {
 .loser-display button:hover {
   background-color: #ff3333;
 }
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  z-index: 999;
+}
+
+@keyframes confetti-fall {
+  to { transform: translateY(100vh) rotate(360deg); }
+}
