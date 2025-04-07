@@ -21,16 +21,16 @@
       background: rgba(255, 255, 255, 0.05);
       border-radius: 16px;
       padding: 30px;
-      max-width: 400px;
+      max-width: 450px;
       margin: auto;
       box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
     }
 
-    .input-group {
+    .guess-inputs {
       display: flex;
       justify-content: center;
       gap: 10px;
-      margin: 20px 0;
+      margin-bottom: 20px;
     }
 
     input {
@@ -45,7 +45,7 @@
     }
 
     button {
-      margin-top: 20px;
+      margin-top: 10px;
       padding: 12px 25px;
       font-size: 16px;
       background-color: #00ffcc;
@@ -77,19 +77,18 @@
     }
 
     #timer {
-      font-size: 20px;
-      margin-top: 10px;
+      font-size: 24px;
+      margin-bottom: 10px;
       color: #ffcc00;
     }
   </style>
 </head>
 <body>
   <h1>Guess Number Game</h1>
-
+  <div id="timer">3:00</div>
   <div class="game-box">
-    <div id="timer">Time left: 60s</div>
     <p>Enter your 4-digit guess (no 0s, no repeats):</p>
-    <div class="input-group">
+    <div class="guess-inputs">
       <input id="g1" maxlength="1" type="number" min="1" max="9">
       <input id="g2" maxlength="1" type="number" min="1" max="9">
       <input id="g3" maxlength="1" type="number" min="1" max="9">
@@ -103,7 +102,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
@@ -120,78 +119,53 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get("room");
+    const gameRef = doc(db, "games", roomId);
 
     let secret = [];
     let history = [];
-    let timeLeft = 60;
     let gameOver = false;
 
     const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
-    const submitBtn = document.getElementById("submit-btn");
-    const resultEl = document.getElementById("result");
 
     inputs.forEach((input, idx) => {
       input.addEventListener("input", () => {
-        if (input.value.length === 1 && idx < 3) {
-          inputs[idx + 1].focus();
-        }
+        if (input.value.length === 1 && idx < 3) inputs[idx + 1].focus();
       });
     });
 
-    const gameRef = doc(db, "games", roomId);
+    function disableInputs() {
+      inputs.forEach(input => input.disabled = true);
+      document.getElementById("submit-btn").disabled = true;
+    }
+
+    function resetInputs() {
+      inputs.forEach(input => input.value = "");
+      inputs[0].focus();
+    }
 
     onSnapshot(gameRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         if (!data.joined) {
-          resultEl.innerText = "Waiting for another player to join...";
-          submitBtn.disabled = true;
+          document.getElementById("result").innerText = "Waiting for another player to join...";
+          disableInputs();
         } else {
           secret = data.secret;
-          resultEl.innerText = "Player joined! Start guessing!";
-          submitBtn.disabled = false;
-          startTimer();
+          document.getElementById("submit-btn").disabled = gameOver;
         }
-
-        if (data.winner && !gameOver) {
-          gameOver = true;
-          resultEl.innerText = `❌ Game over! Player ${data.winner} won.`;
-          disableInputs();
+        if (data.history) {
+          history = data.history;
+          document.getElementById("history").innerText = history.join("\n");
         }
-      } else {
-        resultEl.innerText = "Game not found.";
-        submitBtn.disabled = true;
       }
     });
 
-    function startTimer() {
-      const timerDisplay = document.getElementById("timer");
-      const interval = setInterval(() => {
-        if (gameOver) {
-          clearInterval(interval);
-          return;
-        }
-        timeLeft--;
-        timerDisplay.innerText = `Time left: ${timeLeft}s`;
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          resultEl.innerText = "⏰ Time's up!";
-          disableInputs();
-        }
-      }, 1000);
-    }
-
-    function disableInputs() {
-      inputs.forEach(input => input.disabled = true);
-      submitBtn.disabled = true;
-    }
-
     window.submitGuess = async function () {
       if (gameOver) return;
-
       const guess = inputs.map(input => parseInt(input.value));
+
       if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
-        resultEl.innerText = "Invalid guess. Use 1-9 without repeats.";
+        document.getElementById("result").innerText = "Invalid guess. Use 1-9 without repeats.";
         return;
       }
 
@@ -199,30 +173,46 @@
       let correctNumber = 0;
 
       for (let i = 0; i < 4; i++) {
-        if (guess[i] === secret[i]) {
-          correctPosition++;
-        } else if (secret.includes(guess[i])) {
-          correctNumber++;
-        }
+        if (guess[i] === secret[i]) correctPosition++;
+        else if (secret.includes(guess[i])) correctNumber++;
       }
 
       const feedback = `Guess: ${guess.join("")} → Right place: ${correctPosition}, Right number: ${correctNumber}`;
       history.unshift(feedback);
       document.getElementById("history").innerText = history.join("\n");
 
+      await updateDoc(gameRef, { history });
+
       if (correctPosition === 4) {
-        resultEl.innerText = "🎉 You guessed it! Game over.";
-        disableInputs();
+        document.getElementById("result").innerText = "🎉 You guessed it! Game over.";
         gameOver = true;
-        await updateDoc(gameRef, { winner: "someone" }); // Replace with actual player ID if needed
+        disableInputs();
       } else {
-        resultEl.innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
+        document.getElementById("result").innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
       }
+
+      resetInputs();
     }
 
     window.restartGame = function () {
       window.location.reload();
     }
+
+    // Timer logic
+    let time = 180;
+    const timerDisplay = document.getElementById("timer");
+    const countdown = setInterval(() => {
+      if (time <= 0) {
+        clearInterval(countdown);
+        disableInputs();
+        document.getElementById("result").innerText = "⏰ Time's up!";
+        return;
+      }
+      const minutes = Math.floor(time / 60);
+      const seconds = time % 60;
+      timerDisplay.innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      time--;
+    }, 1000);
   </script>
 </body>
 </html>
