@@ -3,12 +3,6 @@
 <head>
   <title>Guess Number Play - HABESHA GAMES</title>
   <style>
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-
     body {
       font-family: 'Orbitron', sans-serif;
       background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
@@ -51,7 +45,7 @@
     }
 
     button {
-      margin: 10px 5px;
+      margin-top: 10px;
       padding: 12px 25px;
       font-size: 16px;
       background-color: #00ffcc;
@@ -59,19 +53,16 @@
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      transition: all 0.3s;
     }
 
     button:hover {
       background-color: #00e6b8;
-      transform: scale(1.05);
     }
 
     #result {
       margin-top: 20px;
       font-size: 18px;
       white-space: pre-wrap;
-      min-height: 50px;
     }
 
     #history {
@@ -89,110 +80,18 @@
       font-size: 24px;
       margin-bottom: 10px;
       color: #ffcc00;
-      transition: all 0.3s;
-    }
-
-    #score {
-      font-size: 20px;
-      margin: 10px 0;
-      color: #00ffcc;
     }
 
     #player-status {
-      font-size: 16px;
       margin-bottom: 15px;
       color: #00ffcc;
-    }
-
-    .history-entry {
-      padding: 8px;
-      margin: 5px 0;
-      border-radius: 5px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .history-entry:nth-child(odd) {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .guess {
-      color: #00ffcc;
-      font-weight: bold;
-    }
-
-    .feedback {
-      color: #ffcc00;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.7);
-    }
-
-    .modal-content {
-      background: #1a1a2e;
-      margin: 15% auto;
-      padding: 20px;
-      border: 1px solid #00ffcc;
-      width: 80%;
-      max-width: 500px;
-      border-radius: 10px;
-    }
-
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      cursor: pointer;
-    }
-
-    @media (max-width: 600px) {
-      .game-box {
-        padding: 20px;
-        width: 90%;
-      }
-    
-      input {
-        width: 50px;
-        font-size: 16px;
-        padding: 10px;
-      }
-    
-      button {
-        padding: 10px 20px;
-      }
     }
   </style>
 </head>
 <body>
   <h1>Guess Number Game</h1>
-  <div id="player-status">Connecting to game...</div>
+  <div id="player-status">Connecting...</div>
   <div id="timer">3:00</div>
-  <div id="score"></div>
-  <button onclick="showInstructions()">How to Play</button>
-  
-  <div id="instructions-modal" class="modal">
-    <div class="modal-content">
-      <span onclick="hideInstructions()" class="close">&times;</span>
-      <h2>How to Play</h2>
-      <p>Guess the 4-digit secret number!</p>
-      <ul>
-        <li>All digits are between 1-9</li>
-        <li>No digit is repeated</li>
-        <li>You'll get feedback on correct numbers and positions</li>
-        <li>You have 3 minutes to guess the number</li>
-        <li>Score is calculated based on time remaining</li>
-      </ul>
-    </div>
-  </div>
-
   <div class="game-box">
     <p>Enter your 4-digit guess (no 0s, no repeats):</p>
     <div class="guess-inputs">
@@ -231,43 +130,43 @@
     let secret = [];
     let history = [];
     let gameOver = false;
-    let score = 0;
-    let time = 180;
     let isHost = false;
+    let timerStarted = false;
+    let time = 180;
     const timerDisplay = document.getElementById("timer");
     const playerStatus = document.getElementById("player-status");
+    const submitBtn = document.getElementById("submit-btn");
 
     const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
 
-    // Initialize game state
-    async function initializeGame() {
-      const docSnap = await getDoc(gameRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        isHost = !data.joined;
-        
-        if (isHost) {
-          // Host player - generate secret number
-          secret = generateSecretNumber();
-          playerStatus.textContent = "You are the host. Waiting for player to join...";
-          await updateDoc(gameRef, {
-            secret: secret,
-            joined: true,
-            history: []
-          });
-        } else {
-          // Joining player - get secret from host
-          secret = data.secret || [];
-          playerStatus.textContent = "You've joined the game! Start guessing.";
-          if (data.history) {
-            history = data.history;
-            updateHistoryDisplay();
+    function startTimer() {
+      if (timerStarted) return;
+      timerStarted = true;
+      
+      const countdown = setInterval(() => {
+        if (time <= 0 || gameOver) {
+          clearInterval(countdown);
+          if (time <= 0) {
+            disableInputs();
+            document.getElementById("result").innerText = "⏰ Time's up!";
           }
+          return;
         }
-        
-        // Enable inputs if game is ready
-        document.getElementById("submit-btn").disabled = gameOver || secret.length !== 4;
-      }
+        time--;
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        timerDisplay.innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function disableInputs() {
+      inputs.forEach(input => input.disabled = true);
+      submitBtn.disabled = true;
+    }
+
+    function resetInputs() {
+      inputs.forEach(input => input.value = "");
+      inputs[0].focus();
     }
 
     function generateSecretNumber() {
@@ -283,108 +182,64 @@
       return digits;
     }
 
-    inputs.forEach((input, idx) => {
-      input.addEventListener("input", () => {
-        if (input.value.length === 1 && idx < 3) inputs[idx + 1].focus();
-      });
-
-      input.addEventListener("keydown", (e) => {
-        // Allow backspace, delete, tab, arrow keys
-        if ([8, 9, 37, 38, 39, 40, 46].includes(e.keyCode)) return;
+    // Initialize game state
+    async function initializeGame() {
+      const docSnap = await getDoc(gameRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        isHost = !data.joined;
         
-        // Only allow numbers 1-9
-        if (e.key < '1' || e.key > '9') {
-          e.preventDefault();
-          return;
-        }
-        
-        // Auto-focus next input
-        if (input.value.length === 1 && idx < 3) {
-          inputs[idx + 1].focus();
-        }
-      });
-    });
-
-    function disableInputs() {
-      inputs.forEach(input => input.disabled = true);
-      document.getElementById("submit-btn").disabled = true;
-    }
-
-    function resetInputs() {
-      inputs.forEach(input => input.value = "");
-      inputs[0].focus();
-    }
-
-    function updateTimerDisplay() {
-      const minutes = Math.floor(time / 60);
-      const seconds = time % 60;
-      timerDisplay.innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-      
-      // Add visual warning when time is low
-      if (time <= 30) {
-        timerDisplay.style.color = "#ff5555";
-        timerDisplay.style.animation = time <= 10 ? "pulse 0.5s infinite" : "none";
-      }
-    }
-
-    function updateHistoryDisplay() {
-      const historyElement = document.getElementById("history");
-      historyElement.innerHTML = history.map(entry => {
-        const parts = entry.split(" → ");
-        return `<div class="history-entry">
-          <span class="guess">${parts[0]}</span>
-          <span class="feedback">${parts[1]}</span>
-        </div>`;
-      }).join("");
-    }
-
-    const countdown = setInterval(() => {
-      if (time <= 0 || gameOver) {
-        clearInterval(countdown);
-        if (time <= 0) {
+        if (isHost) {
+          // Host player - generate secret number
+          secret = generateSecretNumber();
+          playerStatus.textContent = "You are the host. Waiting for player to join...";
           disableInputs();
-          document.getElementById("result").innerText = "⏰ Time's up! The number was: " + secret.join("");
+          await updateDoc(gameRef, {
+            secret: secret,
+            joined: true,
+            history: []
+          });
+        } else {
+          // Joining player - get secret from host
+          secret = data.secret || [];
+          playerStatus.textContent = "You've joined the game!";
+          if (data.history) {
+            history = data.history;
+            document.getElementById("history").innerText = history.join("\n");
+          }
+          // Start timer when second player joins
+          startTimer();
         }
-        return;
       }
-      time--;
-      updateTimerDisplay();
-    }, 1000);
+    }
 
-    // Real-time game state listener
     onSnapshot(gameRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         
-        // Update game state only if we're not the host
-        if (!isHost) {
-          if (data.secret && data.secret.length === 4) {
-            secret = data.secret;
-            playerStatus.textContent = "Game is ready! Start guessing.";
-            document.getElementById("submit-btn").disabled = gameOver;
+        if (isHost) {
+          // Host checks if game is ready (both players joined)
+          if (data.joined && !timerStarted) {
+            playerStatus.textContent = "Game is ready! Player has joined.";
+            submitBtn.disabled = gameOver;
+            startTimer();
           }
         }
         
-        // Always update history
         if (data.history) {
           history = data.history;
-          updateHistoryDisplay();
+          document.getElementById("history").innerText = history.join("\n");
         }
         
-        // Check if game is over
         if (data.gameOver) {
           gameOver = true;
           disableInputs();
-          if (data.winner) {
-            document.getElementById("result").innerText = `🏆 ${data.winner} guessed the number!`;
-          }
         }
       }
     });
 
     window.submitGuess = async function () {
-      if (gameOver || secret.length !== 4) return;
-      
+      if (gameOver) return;
       const guess = inputs.map(input => parseInt(input.value));
 
       if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
@@ -402,24 +257,19 @@
 
       const feedback = `Guess: ${guess.join("")} → Right place: ${correctPosition}, Right number: ${correctNumber}`;
       history.unshift(feedback);
-      
-      const updateData = {
-        history: history
-      };
+      document.getElementById("history").innerText = history.join("\n");
+
+      await updateDoc(gameRef, { history });
 
       if (correctPosition === 4) {
-        score += time * 10;
-        updateData.gameOver = true;
-        updateData.winner = isHost ? "Player 2" : "Player 1";
-        document.getElementById("score").innerText = `Score: ${score}`;
         document.getElementById("result").innerText = "🎉 You guessed it! Game over.";
         gameOver = true;
         disableInputs();
+        await updateDoc(gameRef, { gameOver: true });
       } else {
         document.getElementById("result").innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
       }
 
-      await updateDoc(gameRef, updateData);
       resetInputs();
     }
 
@@ -427,18 +277,9 @@
       window.location.reload();
     }
 
-    window.showInstructions = function() {
-      document.getElementById("instructions-modal").style.display = "block";
-    }
-
-    window.hideInstructions = function() {
-      document.getElementById("instructions-modal").style.display = "none";
-    }
-
-    // Initialize the game when page loads
-    initializeGame().then(() => {
-      inputs[0].focus();
-    });
+    // Initialize the game
+    initializeGame();
+    inputs[0].focus();
   </script>
 </body>
 </html>
