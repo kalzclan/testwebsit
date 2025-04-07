@@ -1,150 +1,247 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Guess Number Play - HABESHA GAMES</title>
-  <style>
-    body {
-      font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-      color: white;
-      text-align: center;
-      padding: 40px 20px;
-      min-height: 100vh;
-    }
+    <title>Guess Number Play - HABESHA GAMES</title>
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
 
-    h1 {
-      color: #00ffcc;
-      margin-bottom: 30px;
-    }
+        h1 {
+            color: #00ffcc;
+            margin-bottom: 30px;
+        }
 
-    .game-box {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
-      padding: 30px;
-      max-width: 400px;
-      margin: auto;
-      box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-    }
+        .game-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            margin: auto;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+        }
 
-    .input-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
+        .input-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
 
-    input {
-      font-size: 18px;
-      padding: 12px;
-      width: 60px;
-      text-align: center;
-      border: 1px solid #00ffcc;
-      border-radius: 10px;
-      background: #1a1a2e;
-      color: white;
-    }
+        input {
+            font-size: 18px;
+            padding: 12px;
+            width: 60px;
+            text-align: center;
+            border: 1px solid #00ffcc;
+            border-radius: 10px;
+            background: #1a1a2e;
+            color: white;
+        }
 
-    button {
-      margin-top: 20px;
-      padding: 12px 25px;
-      font-size: 16px;
-      background-color: #00ffcc;
-      color: black;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-    }
+        button {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            background-color: #00ffcc;
+            color: black;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+        }
 
-    button:hover {
-      background-color: #00e6b8;
-    }
+        button:hover {
+            background-color: #00e6b8;
+        }
 
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      white-space: pre-wrap;
-    }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            white-space: pre-wrap;
+        }
 
-    #history {
-      margin-top: 30px;
-      font-size: 16px;
-      max-height: 200px;
-      overflow-y: auto;
-      text-align: left;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
-      border-radius: 10px;
-    }
+        #history {
+            margin-top: 30px;
+            font-size: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
 
-    #timer {
-      font-size: 18px;
-      margin-top: 10px;
-    }
-  </style>
+        #timer {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        #gameIdDisplay{
+            margin-top: 10px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Guess Number Game</h1>
-  <div class="game-box">
-    <p>Enter your 4-digit guess (no 0s, no repeats):</p>
-    <div class="input-row">
-      <input id="g1" maxlength="1" type="number" min="1" max="9">
-      <input id="g2" maxlength="1" type="number" min="1" max="9">
-      <input id="g3" maxlength="1" type="number" min="1" max="9">
-      <input id="g4" maxlength="1" type="number" min="1" max="9">
+    <h1>Guess Number Game</h1>
+    <div class="game-box">
+        <button onclick="startGame()">Start Game (Host)</button>
+        <button onclick="joinGame()">Join Game (Player)</button>
+        <p id="gameIdDisplay"></p>
+        <p>Enter your 4-digit guess (no 0s, no repeats):</p>
+        <div class="input-row">
+            <input id="g1" maxlength="1" type="number" min="1" max="9">
+            <input id="g2" maxlength="1" type="number" min="1" max="9">
+            <input id="g3" maxlength="1" type="number" min="1" max="9">
+            <input id="g4" maxlength="1" type="number" min="1" max="9">
+        </div>
+        <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
+        <div id="timer">Time left: 3:00</div>
+        <div id="result"></div>
+        <div id="history"></div>
+        <button onclick="restartGame()">Restart</button>
     </div>
-    <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
-    <div id="timer">Time left: 3:00</div>
-    <div id="result"></div>
-    <div id="history"></div>
-    <button onclick="restartGame()">Restart</button>
-  </div>
 
-  <script>
-    function submitGuess() {
-      const inputs = [g1.value, g2.value, g3.value, g4.value];
-      const guess = inputs.join('');
-      if (new Set(inputs).size !== 4 || guess.includes('0')) {
-        alert("Guess must have 4 unique digits between 1-9");
-        return;
-      }
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
+      authDomain: "habeshagames-1f999.firebaseapp.com",
+      projectId: "habeshagames-1f999",
+      storageBucket: "habeshagames-1f999.appspot.com",
+      messagingSenderId: "919693990773",
+      appId: "1:919693990773:web:f32664a1b944b38101113c",
+      measurementId: "G-G5C67RMJDY"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-      // Logic for matching guess to the answer (assuming answer exists)
-      const answer = '1234'; // example only - replace with Firebase logic
-      let correctNum = 0;
-      let correctPos = 0;
+        let gameId;
+        let isHost = false;
+        let answer;
 
-      for (let i = 0; i < 4; i++) {
-        if (guess[i] === answer[i]) correctPos++;
-        if (answer.includes(guess[i])) correctNum++;
-      }
+        function generateAnswer() {
+            let digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            let answer = '';
+            for (let i = 0; i < 4; i++) {
+                let randomIndex = Math.floor(Math.random() * digits.length);
+                answer += digits.splice(randomIndex, 1)[0];
+            }
+            return answer;
+        }
 
-      document.getElementById('result').innerText = `Correct Numbers: ${correctNum}, Correct Positions: ${correctPos}`;
+        function generateGameId() {
+            return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
 
-      const history = document.getElementById('history');
-      history.innerText += `\nGuess: ${guess} → Numbers: ${correctNum}, Positions: ${correctPos}`;
+        function startGame() {
+            isHost = true;
+            gameId = generateGameId();
+            answer = generateAnswer();
+            database.ref('games/' + gameId).set({
+                answer: answer,
+                playerJoined: false,
+                history: [],
+                time: 180
+            });
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('gameIdDisplay').innerText = "Game ID: " + gameId;
+            disableInputs();
 
-      g1.value = g2.value = g3.value = g4.value = '';
-    }
+            database.ref('games/' + gameId + '/playerJoined').on('value', snapshot => {
+                if (snapshot.val()) {
+                    enableInputs();
+                    startTimer(gameId);
+                }
+            });
+        }
 
-    function restartGame() {
-      if (confirm("Do you want to restart the game?")) {
-        window.location.reload();
-      }
-    }
+        function joinGame() {
+            gameId = prompt("Enter game ID:");
+            if (gameId) {
+                database.ref('games/' + gameId + '/playerJoined').set(true);
+                enableInputs();
+                startTimer(gameId);
+                database.ref('games/'+gameId+'/answer').on('value', snapshot => {
+                    answer = snapshot.val();
+                });
+            }
+        }
 
-    let totalSeconds = 180;
-    const timerEl = document.getElementById("timer");
-    const timer = setInterval(() => {
-      totalSeconds--;
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      timerEl.innerText = `Time left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        function submitGuess() {
+            const inputs = [g1.value, g2.value, g3.value, g4.value];
+            const guess = inputs.join('');
+            if (new Set(inputs).size !== 4 || guess.includes('0')) {
+                alert("Guess must have 4 unique digits between 1-9");
+                return;
+            }
 
-      if (totalSeconds <= 0) {
-        clearInterval(timer);
-        timerEl.innerText = "Time's up!";
-        document.getElementById("submit-btn").disabled = true;
-      }
-    }, 1000);
-  </script>
+            let correctNum = 0;
+            let correctPos = 0;
+
+            for (let i = 0; i < 4; i++) {
+                if (guess[i] === answer[i]) correctPos++;
+                if (answer.includes(guess[i])) correctNum++;
+            }
+
+            document.getElementById('result').innerText = `Correct Numbers: ${correctNum}, Correct Positions: ${correctPos}`;
+
+            const history = document.getElementById('history');
+            history.innerText += `\nGuess: ${guess} → Numbers: ${correctNum}, Positions: ${correctPos}`;
+            database.ref('games/'+gameId+'/history').set(history.innerText);
+
+            g1.value = g2.value = g3.value = g4.value = '';
+
+            if (correctPos === 4) {
+                document.getElementById('result').innerText = "Congratulations! You guessed the correct Number!";
+                document.getElementById('submit-btn').disabled = true;
+                clearInterval(window.timerInterval);
+            }
+        }
+
+        function startTimer(gameId) {
+            let totalSeconds = 180;
+            const timerEl = document.getElementById("timer");
+            window.timerInterval = setInterval(() => {
+                totalSeconds--;
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                timerEl.innerText = `Time left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+                if (totalSeconds <= 0) {
+                    clearInterval(window.timerInterval);
+                    timerEl.innerText = "Time's up! The correct number was " + answer;
+                    document.getElementById("submit-btn").disabled = true;
+                    database.ref('games/' + gameId + '/time').set(0);
+                } else {
+                    database.ref('games/' + gameId + '/time').set(totalSeconds);
+                }
+            }, 1000);
+        }
+
+        function restartGame() {
+            if (confirm("Do you want to restart the game?")) {
+                window.location.reload();
+            }
+        }
+        function disableInputs(){
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('g1').disabled = true;
+            document.getElementById('g2').disabled = true;
+            document.getElementById('g3').disabled = true;
+            document.getElementById('g4').disabled = true;
+        }
+        function enableInputs(){
+            document.getElementById('submit-btn').disabled = false;
+            document.getElementById('g1').disabled = false;
+            document.getElementById('g2').disabled = false;
+            document.getElementById('g3').disabled = false;
+            document.getElementById('g4').disabled = false;
+        }
+    </script>
 </body>
 </html>
