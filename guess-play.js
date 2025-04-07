@@ -118,7 +118,19 @@
               joined: true,
               joinedAt: new Date().toISOString()
             });
-            player2NameEl.innerText = `Player 2: enemy`;
+
+
+ const userRef = doc(db, "users", player2Id);
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+
+           player2NameEl.innerText = `Player 2: ${docSnap.data().username}`;
+       
+      } 
+
+
+              
+            //player2NameEl.innerText = `Player 2: enemy`;
           }
           
           // Load player names from users collection
