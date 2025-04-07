@@ -187,7 +187,7 @@ window.submitGuess = async function () {
     await updateDoc(gameRef, { 
       rounds: arrayUnion(roundInfo)
     });
-    resultEl.innerText = `Your guess: ${guessStr}\nCorrect position: ${correctPosition}\nCorrect number: ${correctNumber}`;
+  //  resultEl.innerText = `Your guess: ${guessStr}\nCorrect position: ${correctPosition}\nCorrect number: ${correctNumber}`;
   }
 }
 
