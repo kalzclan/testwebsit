@@ -3,84 +3,7 @@
 <head>
     <title>Guess Number Play - HABESHA GAMES</title>
     <style>
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-            color: white;
-            text-align: center;
-            padding: 40px 20px;
-            min-height: 100vh;
-        }
-
-        h1 {
-            color: #00ffcc;
-            margin-bottom: 30px;
-        }
-
-        .game-box {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 400px;
-            margin: auto;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-        }
-
-        .input-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        input {
-            font-size: 18px;
-            padding: 12px;
-            width: 60px;
-            text-align: center;
-            border: 1px solid #00ffcc;
-            border-radius: 10px;
-            background: #1a1a2e;
-            color: white;
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 12px 25px;
-            font-size: 16px;
-            background-color: #00ffcc;
-            color: black;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #00e6b8;
-        }
-
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
-            white-space: pre-wrap;
-        }
-
-        #history {
-            margin-top: 30px;
-            font-size: 16px;
-            max-height: 200px;
-            overflow-y: auto;
-            text-align: left;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        #timer {
-            font-size: 20px;
-            margin-top: 10px;
-            color: #ffcc00;
-        }
+        body { /* ... (Your existing styles) ... */ }
         .correct-position { color: green; }
         .correct-number { color: orange; }
     </style>
@@ -107,16 +30,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "habeshagames-1f999.firebaseapp.com",
-            projectId: "habeshagames-1f999",
-            storageBucket: "habeshagames-1f999.appspot.com",
-            messagingSenderId: "919693990773",
-            appId: "1:919693990773:web:f32664a1b944b38101113c",
-            measurementId: "G-G5C67RMJDY"
-        };
-
+        const firebaseConfig = { /* ... (Your Firebase config) ... */ };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -128,7 +42,7 @@
         let history = [];
         let timeLeft = 60;
         let gameOver = false;
-        let turn = playerId;
+        let turn; // turn is declared without initialization
 
         const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
         const submitBtn = document.getElementById("submit-btn");
@@ -153,6 +67,7 @@
                 } else {
                     secret = data.secret;
                     resultEl.innerText = "Player joined! Start guessing!";
+                    turn = data.turn; // turn is set from firebase data
                     submitBtn.disabled = (turn !== playerId);
                     inputs.forEach(input => input.disabled = (turn !== playerId));
                     startTimer();
@@ -163,7 +78,7 @@
                     resultEl.innerText = `🎉 Game over! Player ${data.winner} won.`;
                     disableInputs();
                 }
-                turn = data.turn;
+                turn = data.turn; // turn is updated from firebase data
                 submitBtn.disabled = (turn !== playerId);
                 inputs.forEach(input => input.disabled = (turn !== playerId));
             } else {
@@ -172,27 +87,9 @@
             }
         });
 
-        function startTimer() {
-            const timerDisplay = document.getElementById("timer");
-            const interval = setInterval(() => {
-                if (gameOver) {
-                    clearInterval(interval);
-                    return;
-                }
-                timeLeft--;
-                timerDisplay.innerText = `Time left: ${timeLeft}s`;
-                if (timeLeft <= 0) {
-                    clearInterval(interval);
-                    resultEl.innerText = "⏰ Time's up!";
-                    disableInputs();
-                }
-            }, 1000);
-        }
+        function startTimer() { /* ... (Your timer logic) ... */ }
 
-        function disableInputs() {
-            inputs.forEach(input => input.disabled = true);
-            submitBtn.disabled = true;
-        }
+        function disableInputs() { /* ... (Your disableInputs logic) ... */ }
 
         window.submitGuess = async function () {
             if (gameOver || turn !== playerId) return;
@@ -234,9 +131,7 @@
             inputs.forEach(input => input.value = "");
         }
 
-        window.restartGame = function () {
-            window.location.reload();
-        }
+        window.restartGame = function () { /* ... (Your restartGame logic) ... */ }
     </script>
 </body>
 </html>
