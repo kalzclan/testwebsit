@@ -56,6 +56,18 @@
     #result {
       margin-top: 20px;
       font-size: 18px;
+      white-space: pre-wrap;
+    }
+
+    #history {
+      margin-top: 30px;
+      font-size: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
     }
   </style>
 </head>
@@ -69,13 +81,15 @@
     <input id="g3" maxlength="1" type="number" min="1" max="9">
     <input id="g4" maxlength="1" type="number" min="1" max="9">
     <br>
-    <button onclick="submitGuess()">Submit Guess</button>
+    <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
     <div id="result"></div>
+    <div id="history"></div>
+    <button onclick="restartGame()">Restart</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
@@ -94,12 +108,28 @@
     const roomId = urlParams.get("room");
 
     let secret = [];
+    let history = [];
+
+    const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
+    inputs.forEach((input, idx) => {
+      input.addEventListener("input", () => {
+        if (input.value.length === 1 && idx < 3) {
+          inputs[idx + 1].focus();
+        }
+      });
+    });
 
     async function fetchSecret() {
       const gameRef = doc(db, "games", roomId);
       const snap = await getDoc(gameRef);
       if (snap.exists()) {
-        secret = snap.data().secret;
+        const data = snap.data();
+        if (!data.joined) {
+          document.getElementById("result").innerText = "Waiting for another player to join...";
+          document.getElementById("submit-btn").disabled = true;
+          return;
+        }
+        secret = data.secret;
         console.log("Secret number:", secret);
       } else {
         document.getElementById("result").innerText = "Game not found.";
@@ -109,14 +139,9 @@
     fetchSecret();
 
     window.submitGuess = function () {
-      const guess = [
-        parseInt(document.getElementById("g1").value),
-        parseInt(document.getElementById("g2").value),
-        parseInt(document.getElementById("g3").value),
-        parseInt(document.getElementById("g4").value)
-      ];
+      const guess = inputs.map(input => parseInt(input.value));
 
-      if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9)) {
+      if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
         document.getElementById("result").innerText = "Invalid guess. Use 1-9 without repeats.";
         return;
       }
@@ -132,8 +157,20 @@
         }
       }
 
-      document.getElementById("result").innerText =
-        `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
+      const feedback = `Guess: ${guess.join("")} → Right place: ${correctPosition}, Right number: ${correctNumber}`;
+      history.unshift(feedback);
+      document.getElementById("history").innerText = history.join("\n");
+
+      if (correctPosition === 4) {
+        document.getElementById("result").innerText = "🎉 You guessed it! Game over.";
+        document.getElementById("submit-btn").disabled = true;
+      } else {
+        document.getElementById("result").innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
+      }
+    }
+
+    window.restartGame = function () {
+      window.location.reload();
     }
   </script>
 </body>
