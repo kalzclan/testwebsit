@@ -26,10 +26,16 @@
       box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
     }
 
+    .input-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
     input {
       font-size: 18px;
       padding: 12px;
-      margin: 10px;
       width: 60px;
       text-align: center;
       border: 1px solid #00ffcc;
@@ -69,18 +75,26 @@
       padding: 15px;
       border-radius: 10px;
     }
+
+    #timer {
+      font-size: 20px;
+      margin-top: 10px;
+      color: #ffcc00;
+    }
   </style>
 </head>
 <body>
   <h1>Guess Number Game</h1>
 
   <div class="game-box">
+    <div id="timer">Time left: 60s</div>
     <p>Enter your 4-digit guess (no 0s, no repeats):</p>
-    <input id="g1" maxlength="1" type="number" min="1" max="9">
-    <input id="g2" maxlength="1" type="number" min="1" max="9">
-    <input id="g3" maxlength="1" type="number" min="1" max="9">
-    <input id="g4" maxlength="1" type="number" min="1" max="9">
-    <br>
+    <div class="input-group">
+      <input id="g1" maxlength="1" type="number" min="1" max="9">
+      <input id="g2" maxlength="1" type="number" min="1" max="9">
+      <input id="g3" maxlength="1" type="number" min="1" max="9">
+      <input id="g4" maxlength="1" type="number" min="1" max="9">
+    </div>
     <button onclick="submitGuess()" id="submit-btn">Submit Guess</button>
     <div id="result"></div>
     <div id="history"></div>
@@ -89,7 +103,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
@@ -109,8 +123,13 @@
 
     let secret = [];
     let history = [];
+    let timeLeft = 60;
+    let gameOver = false;
 
     const inputs = ["g1", "g2", "g3", "g4"].map(id => document.getElementById(id));
+    const submitBtn = document.getElementById("submit-btn");
+    const resultEl = document.getElementById("result");
+
     inputs.forEach((input, idx) => {
       input.addEventListener("input", () => {
         if (input.value.length === 1 && idx < 3) {
@@ -119,30 +138,60 @@
       });
     });
 
-    async function fetchSecret() {
-      const gameRef = doc(db, "games", roomId);
-      const snap = await getDoc(gameRef);
+    const gameRef = doc(db, "games", roomId);
+
+    onSnapshot(gameRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         if (!data.joined) {
-          document.getElementById("result").innerText = "Waiting for another player to join...";
-          document.getElementById("submit-btn").disabled = true;
+          resultEl.innerText = "Waiting for another player to join...";
+          submitBtn.disabled = true;
+        } else {
+          secret = data.secret;
+          resultEl.innerText = "Player joined! Start guessing!";
+          submitBtn.disabled = false;
+          startTimer();
+        }
+
+        if (data.winner && !gameOver) {
+          gameOver = true;
+          resultEl.innerText = `❌ Game over! Player ${data.winner} won.`;
+          disableInputs();
+        }
+      } else {
+        resultEl.innerText = "Game not found.";
+        submitBtn.disabled = true;
+      }
+    });
+
+    function startTimer() {
+      const timerDisplay = document.getElementById("timer");
+      const interval = setInterval(() => {
+        if (gameOver) {
+          clearInterval(interval);
           return;
         }
-        secret = data.secret;
-        console.log("Secret number:", secret);
-      } else {
-        document.getElementById("result").innerText = "Game not found.";
-      }
+        timeLeft--;
+        timerDisplay.innerText = `Time left: ${timeLeft}s`;
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          resultEl.innerText = "⏰ Time's up!";
+          disableInputs();
+        }
+      }, 1000);
     }
 
-    fetchSecret();
+    function disableInputs() {
+      inputs.forEach(input => input.disabled = true);
+      submitBtn.disabled = true;
+    }
 
-    window.submitGuess = function () {
+    window.submitGuess = async function () {
+      if (gameOver) return;
+
       const guess = inputs.map(input => parseInt(input.value));
-
       if (guess.includes(0) || new Set(guess).size !== 4 || guess.some(n => n < 1 || n > 9 || isNaN(n))) {
-        document.getElementById("result").innerText = "Invalid guess. Use 1-9 without repeats.";
+        resultEl.innerText = "Invalid guess. Use 1-9 without repeats.";
         return;
       }
 
@@ -162,10 +211,12 @@
       document.getElementById("history").innerText = history.join("\n");
 
       if (correctPosition === 4) {
-        document.getElementById("result").innerText = "🎉 You guessed it! Game over.";
-        document.getElementById("submit-btn").disabled = true;
+        resultEl.innerText = "🎉 You guessed it! Game over.";
+        disableInputs();
+        gameOver = true;
+        await updateDoc(gameRef, { winner: "someone" }); // Replace with actual player ID if needed
       } else {
-        document.getElementById("result").innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
+        resultEl.innerText = `Correct numbers in correct place: ${correctPosition}\nCorrect numbers in wrong place: ${correctNumber}`;
       }
     }
 
