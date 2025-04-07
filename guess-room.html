@@ -3,6 +3,8 @@
 <head>
   <title>Guess Number - HABESHA GAMES</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
     body {
       font-family: 'Orbitron', sans-serif;
       background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
@@ -26,7 +28,7 @@
       box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
     }
 
-    input, select {
+    input {
       font-size: 18px;
       padding: 12px;
       margin: 10px;
@@ -34,6 +36,7 @@
       border-radius: 10px;
       background: #1a1a2e;
       color: white;
+      width: 80%;
     }
 
     button {
@@ -52,8 +55,9 @@
     }
 
     #status {
-      margin-top: 20px;
-      font-size: 18px;
+      margin-top: 15px;
+      font-size: 16px;
+      color: #ffcc00;
     }
 
     .back {
@@ -71,6 +75,7 @@
   <div class="game-box">
     <p>Create or Join a Game</p>
     <input type="text" id="room-id" placeholder="Enter Room ID">
+    <br>
     <button onclick="createGame()">Create Game</button>
     <button onclick="joinGame()">Join Game</button>
     <div id="status"></div>
@@ -104,7 +109,7 @@
       return numbers;
     }
 
-    async function createGame() {
+    window.createGame = async function () {
       const roomId = document.getElementById("room-id").value.trim();
       if (!roomId) return alert("Enter a room ID.");
 
@@ -125,10 +130,11 @@
         createdAt: new Date().toISOString()
       });
 
-      document.getElementById("status").innerText = `Game created! Waiting for opponent...`;
+      // Redirect host to game page
+      window.location.href = `/guess-play.html?room=${roomId}&role=host`;
     }
 
-    async function joinGame() {
+    window.joinGame = async function () {
       const roomId = document.getElementById("room-id").value.trim();
       if (!roomId) return alert("Enter a room ID.");
 
@@ -153,14 +159,9 @@
         joinedAt: new Date().toISOString()
       });
 
-      document.getElementById("status").innerText = `Joined game! Ready to play.`;
-      // Optional: redirect to game page
-      // window.location.href = `/guess-play.html?room=${roomId}`;
+      // Redirect guest to game page
+      window.location.href = `/guess-play.html?room=${roomId}&role=guest`;
     }
-
-    // 🔓 Make the functions available globally
-    window.createGame = createGame;
-    window.joinGame = joinGame;
   </script>
 </body>
 </html>
