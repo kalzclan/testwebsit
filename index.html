@@ -2,66 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HABESHA GAMES - Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HABESHA GAMES Registration</title>
 </head>
 <body>
   <h1>Register for HABESHA GAMES</h1>
-  <form id="registerForm">
+  <form id="registration-form">
     <label for="username">Username:</label>
-    <input type="text" id="username" required />
-    <br /><br />
+    <input type="text" id="username" required /><br><br>
+    
     <label for="phone">Phone Number:</label>
-    <input type="text" id="phone" required />
-    <br /><br />
+    <input type="text" id="phone" required /><br><br>
+    
     <button type="submit">Register</button>
   </form>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // ✅ Correct Supabase URL and key
+    const supabaseUrl = "https://evberyanshxxalxtwnnc.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw";
 
-    // Replace these with your actual Supabase project credentials
-    const supabaseUrl = "https://abcxyz.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw"; // Replace with your actual anon/public key
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+    document.getElementById('registration-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const username = document.getElementById("username").value;
-      const phone = document.getElementById("phone").value;
+      const username = document.getElementById('username').value;
+      const phone = document.getElementById('phone').value;
 
-      // Check if user already exists
-      const { data: existingUser, error: selectError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("phone", phone)
-        .single();
+      // Insert data into "users" table
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{ username, phone }]);
 
-      if (selectError && selectError.code !== "PGRST116") {
-        alert("Error checking user: " + selectError.message);
-        return;
-      }
-
-      if (existingUser) {
-        // User already exists, redirect to home
-        window.location.href = `/home.html?id=${existingUser.id}`;
+      if (error) {
+        alert('Error: ' + error.message);
+        console.error(error);
       } else {
-        // Insert new user
-        const { data: newUser, error: insertError } = await supabase
-          .from("users")
-          .insert([{ username, phone, balance: 0 }])
-          .select()
-          .single();
-
-        if (insertError) {
-          alert("Error creating user: " + insertError.message);
-        } else {
-          // Redirect to home with user ID
-          window.location.href = `/home.html?id=${newUser.id}`;
-        }
+        alert('Registration successful!');
+        console.log('Inserted:', data);
       }
+
+      // Optionally clear the form
+      document.getElementById('registration-form').reset();
     });
   </script>
 </body>
