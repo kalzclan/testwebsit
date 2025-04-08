@@ -3,198 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HABESHA GAMES</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(145deg, #111, #222);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    #register-form {
-      background-color: #1e1e1e;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 0 20px rgba(0, 255, 128, 0.3);
-      width: 90%;
-      max-width: 400px;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #00ff99;
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background: #00ff99;
-      color: #000;
-      font-weight: bold;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s ease;
-    }
-
-    button:hover {
-      background: #00cc7a;
-    }
-
-    .logout {
-      margin-top: 10px;
-      background: #ff4444;
-      color: white;
-    }
-
-    .logout:hover {
-      background: #cc3333;
-    }
-
-    .error {
-      color: #ff5555;
-      text-align: center;
-      margin-top: 10px;
-    }
-
-    .success {
-      color: #00ff99;
-      text-align: center;
-      margin-top: 10px;
-    }
-  </style>
+  <title>HABESHA GAMES - Register</title>
 </head>
 <body>
-  <div id="register-form">
-    <h2>HABESHA GAMES</h2>
-    <input type="text" id="username" placeholder="Enter your name" />
-    <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" />
-    <button id="register-btn">Register</button>
-    <button class="logout" id="logout-btn">Logout</button>
-    <div id="message" class="error"></div>
-  </div>
+  <h1>Register for HABESHA GAMES</h1>
+  <form id="registerForm">
+    <label for="username">Username:</label>
+    <input type="text" id="username" required />
+    <br /><br />
+    <label for="phone">Phone Number:</label>
+    <input type="text" id="phone" required />
+    <br /><br />
+    <button type="submit">Register</button>
+  </form>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // Initialize Supabase with your credentials
-    const supabaseUrl = 'https://evberyanshxxalxtwnnc.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      console.log('Supabase initialized:', supabase);
-      
-      const registerForm = document.getElementById('register-form');
-      const registerBtn = document.getElementById('register-btn');
-      const logoutBtn = document.getElementById('logout-btn');
-      const messageDiv = document.getElementById('message');
+    // Replace these with your actual Supabase project credentials
+    const supabaseUrl = "https://xqptvsvukxrbvcyxfjcd.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw"; // Replace with your actual anon/public key
 
-      // Check for existing user session
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        try {
-          const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('phone', userId)
-            .single();
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-          if (data) {
-            window.location.href = '/home.html?id=' + userId;
-            return;
-          } else {
-            localStorage.removeItem('userId');
-          }
-        } catch (error) {
-          console.error('Error checking user:', error);
-          showMessage('Error checking session', 'error');
-        }
+    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const username = document.getElementById("username").value;
+      const phone = document.getElementById("phone").value;
+
+      // Check if user already exists
+      const { data: existingUser, error: selectError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("phone", phone)
+        .single();
+
+      if (selectError && selectError.code !== "PGRST116") {
+        alert("Error checking user: " + selectError.message);
+        return;
       }
 
-      // Event listeners
-      registerBtn.addEventListener('click', async () => {
-        const username = document.getElementById('username').value.trim();
-        const phone = document.getElementById('phone').value.trim();
+      if (existingUser) {
+        // User already exists, redirect to home
+        window.location.href = `/home.html?id=${existingUser.id}`;
+      } else {
+        // Insert new user
+        const { data: newUser, error: insertError } = await supabase
+          .from("users")
+          .insert([{ username, phone, balance: 0 }])
+          .select()
+          .single();
 
-        if (!username || !phone) {
-          showMessage('Please fill in both fields', 'error');
-          return;
+        if (insertError) {
+          alert("Error creating user: " + insertError.message);
+        } else {
+          // Redirect to home with user ID
+          window.location.href = `/home.html?id=${newUser.id}`;
         }
-
-        if (!/^\d{10}$/.test(phone)) {
-          showMessage('Phone must be 10 digits', 'error');
-          return;
-        }
-
-        try {
-          // Check if user exists
-          const { data: existingUser, error: lookupError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('phone', phone)
-            .single();
-
-          if (existingUser) {
-            showMessage('Phone number already registered', 'error');
-            return;
-          }
-
-          // Create new user
-          const { data: newUser, error: insertError } = await supabase
-            .from('users')
-            .insert([
-              {
-                username: username,
-                phone: phone,
-                balance: 0,
-                created_at: new Date().toISOString()
-              }
-            ])
-            .select()
-            .single();
-
-          if (insertError) throw insertError;
-
-          localStorage.setItem('userId', phone);
-          showMessage('Registration successful! Redirecting...', 'success');
-          
-          // Simulate redirect for demo purposes
-          setTimeout(() => {
-            window.location.href = '/home.html?id=' + phone;
-          }, 1500);
-
-        } catch (error) {
-          console.error('Registration error:', error);
-          showMessage('Registration failed: ' + error.message, 'error');
-        }
-      });
-
-      logoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('userId');
-        showMessage('Logged out successfully', 'success');
-        // Refresh to show registration form again
-        setTimeout(() => location.reload(), 1000);
-      });
-
-      function showMessage(text, type) {
-        messageDiv.textContent = text;
-        messageDiv.className = type === 'error' ? 'error' : 'success';
       }
     });
   </script>
