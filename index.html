@@ -1,122 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Habesha Games - Registration</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #e0eafc, #cfdef3);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
+<html>
+  <head>
+    <title>Supabase Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  </head>
+  <body>
+    <h1>Supabase Connection Test</h1>
+    <script>
+      const supabaseUrl = 'https://evberyanshxxalxtwnnc.supabase.co';
+      const supabaseKey = 'YOUR_ANON_KEY_HERE'; // paste the anon key
+      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    .container {
-      background-color: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    label {
-      display: block;
-      margin-top: 15px;
-      color: #555;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 20px;
-      padding: 12px;
-      background-color: #4CAF50;
-      border: none;
-      color: white;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    .message {
-      margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
-      color: red;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>Register for HABESHA GAMES</h2>
-    <form id="registrationForm">
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" required />
-
-      <label for="phone">Phone Number:</label>
-      <input type="text" id="phone" name="phone" required />
-
-      <button type="submit">Register</button>
-      <div class="message" id="message"></div>
-    </form>
-  </div>
-
-  <!-- Load Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <script>
-    // ✅ Initialize Supabase properly after script is loaded
-    const supabaseUrl = "https://evberyanshxxalxtwnnc.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw";
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-    // 🔄 Handle form submission
-    document.getElementById("registrationForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const username = document.getElementById("username").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const messageEl = document.getElementById("message");
-
-      if (!username || !phone) {
-        messageEl.textContent = "Please fill in all fields.";
-        return;
+      async function testConnection() {
+        const { data, error } = await supabase.from('users').select('*');
+        console.log("DATA:", data);
+        console.log("ERROR:", error);
       }
 
-      const { data, error } = await supabase
-        .from("users")
-        .insert([{ username, phone }]);
-
-      if (error) {
-        messageEl.textContent = "Error: " + error.message;
-      } else {
-        messageEl.style.color = "green";
-        messageEl.textContent = "Registration successful!";
-        document.getElementById("registrationForm").reset();
-      }
-    });
-  </script>
-</body>
+      testConnection();
+    </script>
+  </body>
 </html>
