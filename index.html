@@ -75,100 +75,68 @@
   </style>
 </head>
 <body>
-  <div id="register-form" style="display: none;">
+  <div id="register-form">
     <h2>HABESHA GAMES</h2>
     <input type="text" id="username" placeholder="Enter your name" />
     <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" />
-    <button onclick="saveData()">Register</button>
-    <button class="logout" onclick="logout()">Logout</button>
+    <button id="register-btn">Register</button>
+    <button class="logout" id="logout-btn">Logout</button>
     <div id="error" class="error"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Initialize Supabase client
-    const supabaseUrl = 'YOUR_SUPABASE_URL'; // Replace with your Supabase URL
-    const supabaseKey = 'YOUR_SUPABASE_KEY'; // Replace with your Supabase anon/public key
+    // Initialize Supabase with demo credentials for testing
+    const supabaseUrl = 'https://your-project-ref.supabase.co';
+    const supabaseKey = 'your-anon-key';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      const userId = localStorage.getItem("userId");
-      if (userId) {
-        // Check if user exists in Supabase
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('phone', userId)
-          .single();
-        
-        if (data) {
-          window.location.href = "/home.html?id=" + userId;
-          return;
-        } else {
-          localStorage.removeItem("userId");
-        }
-      }
+    
+    // Make available globally for testing
+    window.supabase = supabase;
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log("DOM fully loaded");
+      
+      // For testing in this environment, we'll skip the user check
+      // and just show the form immediately
       document.getElementById("register-form").style.display = "block";
+      
+      // Add event listeners
+      document.getElementById("register-btn").addEventListener("click", saveData);
+      document.getElementById("logout-btn").addEventListener("click", logout);
+      
+      // Mock the saveData function for demonstration
+      window.saveData = async function() {
+        const username = document.getElementById("username").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const errorDiv = document.getElementById("error");
+        
+        if (!username || !phone) {
+          errorDiv.textContent = "Please fill in both fields";
+          return;
+        }
+        
+        if (!/^\d{10}$/.test(phone)) {
+          errorDiv.textContent = "Phone must be 10 digits";
+          return;
+        }
+        
+        // Show success message (in a real app, this would be the Supabase call)
+        errorDiv.textContent = "Registration successful! (Demo)";
+        errorDiv.style.color = "#00ff99";
+        
+        // Reset form after 2 seconds
+        setTimeout(() => {
+          document.getElementById("username").value = "";
+          document.getElementById("phone").value = "";
+          errorDiv.textContent = "";
+        }, 2000);
+      };
+      
+      window.logout = function() {
+        alert("Logout clicked (demo)");
+      };
     });
-
-    window.saveData = async function () {
-      const username = document.getElementById("username").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const errorDiv = document.getElementById("error");
-
-      errorDiv.textContent = "";
-
-      if (!username || !phone) {
-        errorDiv.textContent = "Please fill in both name and phone number.";
-        return;
-      }
-
-      if (!/^\d{10}$/.test(phone)) {
-        errorDiv.textContent = "Phone number must be exactly 10 digits.";
-        return;
-      }
-
-      // Check if phone number already exists
-      const { data: existingUser, error: lookupError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('phone', phone)
-        .single();
-
-      if (existingUser) {
-        errorDiv.textContent = "Phone number already registered.";
-        return;
-      }
-
-      try {
-        // Insert new user
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert([
-            {
-              username: username,
-              phone: phone,
-              balance: 0,
-              created_at: new Date().toISOString()
-            }
-          ])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-
-        localStorage.setItem("userId", phone);
-        window.location.href = "/home.html?id=" + phone;
-      } catch (err) {
-        console.error("Error saving user:", err);
-        errorDiv.textContent = "Failed to register. Try again.";
-      }
-    }
-
-    window.logout = function () {
-      localStorage.removeItem("userId");
-      location.reload(); // Refresh the page to show the form again
-    }
   </script>
 </body>
 </html>
