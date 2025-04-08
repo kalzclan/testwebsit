@@ -84,29 +84,24 @@
     <div id="error" class="error"></div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
-      authDomain: "habeshagames-1f999.firebaseapp.com",
-      projectId: "habeshagames-1f999",
-      storageBucket: "habeshagames-1f999.appspot.com",
-      messagingSenderId: "919693990773",
-      appId: "1:919693990773:web:f32664a1b944b38101113c",
-      measurementId: "G-G5C67RMJDY"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const firestore = getFirestore(app);
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Initialize Supabase client
+    const supabaseUrl = 'YOUR_SUPABASE_URL'; // Replace with your Supabase URL
+    const supabaseKey = 'YOUR_SUPABASE_KEY'; // Replace with your Supabase anon/public key
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     window.addEventListener("DOMContentLoaded", async () => {
       const userId = localStorage.getItem("userId");
       if (userId) {
-        const userRef = doc(firestore, "users", userId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
+        // Check if user exists in Supabase
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('phone', userId)
+          .single();
+        
+        if (data) {
           window.location.href = "/home.html?id=" + userId;
           return;
         } else {
@@ -133,21 +128,34 @@
         return;
       }
 
-      const userRef = doc(firestore, "users", phone);
-      const existingUser = await getDoc(userRef);
+      // Check if phone number already exists
+      const { data: existingUser, error: lookupError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('phone', phone)
+        .single();
 
-      if (existingUser.exists()) {
+      if (existingUser) {
         errorDiv.textContent = "Phone number already registered.";
         return;
       }
 
       try {
-        await setDoc(userRef, {
-          username: username,
-          phone: phone,
-          balance: 0,
-          createdAt: new Date().toISOString()
-        });
+        // Insert new user
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert([
+            {
+              username: username,
+              phone: phone,
+              balance: 0,
+              created_at: new Date().toISOString()
+            }
+          ])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
 
         localStorage.setItem("userId", phone);
         window.location.href = "/home.html?id=" + phone;
