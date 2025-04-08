@@ -7,8 +7,9 @@
   <body>
     <h1>Supabase Connection Test</h1>
     <script>
-      const supabaseUrl = 'https://evberyanshxxalxtwnnc.supabase.co';
-      const supabaseKey = 'YOUR_ANON_KEY_HERE'; // paste the anon key
+     const supabaseUrl = "https://evberyanshxxalxtwnnc.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw";
+
       const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
       async function testConnection() {
