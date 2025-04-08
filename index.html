@@ -2,50 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HABESHA GAMES Registration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Habesha Games Registration</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    form {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+    }
+
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 0.8rem;
+      margin: 1rem 0;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #00b894;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #019875;
+    }
+  </style>
 </head>
 <body>
-  <h1>Register for HABESHA GAMES</h1>
+  <h1>Register for Habesha Games</h1>
   <form id="registration-form">
-    <label for="username">Username:</label>
-    <input type="text" id="username" required /><br><br>
-    
-    <label for="phone">Phone Number:</label>
-    <input type="text" id="phone" required /><br><br>
-    
+    <input type="text" id="username" placeholder="Username" required />
+    <input type="tel" id="phone" placeholder="Phone Number" required />
     <button type="submit">Register</button>
   </form>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    // ✅ Correct Supabase URL and key
     const supabaseUrl = "https://evberyanshxxalxtwnnc.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw";
-
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    document.getElementById('registration-form').addEventListener('submit', async (e) => {
+    document.getElementById("registration-form").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const username = document.getElementById('username').value;
-      const phone = document.getElementById('phone').value;
+      const username = document.getElementById("username").value.trim();
+      const phone = document.getElementById("phone").value.trim();
 
-      // Insert data into "users" table
-      const { data, error } = await supabase
-        .from('users')
-        .insert([{ username, phone }]);
-
-      if (error) {
-        alert('Error: ' + error.message);
-        console.error(error);
-      } else {
-        alert('Registration successful!');
-        console.log('Inserted:', data);
+      if (!username || !phone) {
+        alert("Please fill out both fields.");
+        return;
       }
 
-      // Optionally clear the form
-      document.getElementById('registration-form').reset();
+      try {
+        const { data: existingUser, error: fetchError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("phone", phone);
+
+        if (fetchError) throw fetchError;
+
+        if (existingUser.length > 0) {
+          alert("Phone number already registered.");
+          return;
+        }
+
+        const { data, error: insertError } = await supabase
+          .from("users")
+          .insert([{ username, phone }]);
+
+        if (insertError) throw insertError;
+
+        alert("Registration successful!");
+        document.getElementById("registration-form").reset();
+      } catch (error) {
+        console.error("Error checking user:", error);
+        alert("Error checking user: " + error.message);
+      }
     });
   </script>
 </body>
