@@ -1,118 +1,142 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>HABESHA GAMES - Home</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habesha Games - Home</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     body {
-      font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-      color: white;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
       display: flex;
       flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      justify-content: flex-start;
-      padding: 20px;
-      min-height: 100vh;
-    }
-    h1 {
-      color: #00ffcc;
-      margin-bottom: 10px;
-    }
-    #balance {
-      font-size: 20px;
-      margin-bottom: 30px;
-    }
-    .game-list {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      width: 100%;
-      max-width: 300px;
-    }
-    .game-list a {
-      text-decoration: none;
-      background-color: #1a1a2e;
-      border: 1px solid #00ffcc;
+      background-color: #2c3e50;
+      color: white;
       padding: 15px;
-      border-radius: 12px;
-      color: white;
-      text-align: center;
-      font-size: 18px;
-      transition: background 0.3s;
     }
-    .game-list a:hover {
-      background-color: #00ffcc;
-      color: black;
+
+    .username {
+      font-size: 1em;
     }
-    .logout-btn {
-      margin-top: 40px;
-      padding: 10px 25px;
-      font-size: 16px;
-      background-color: #ff4c4c;
-      color: white;
+
+    .balance {
+      font-size: 1em;
+    }
+
+    .icon-btn {
+      background: none;
       border: none;
-      border-radius: 12px;
+      color: white;
+      font-size: 1.2em;
       cursor: pointer;
     }
-    .logout-btn:hover {
-      background-color: #e60000;
+
+    main {
+      padding: 20px;
+      flex: 1;
+    }
+
+    .games-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .games-list li {
+      background: white;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .games-list i {
+      margin-right: 10px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .top-controls {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Welcome to HABESHA GAMES</h1>
-  <div id="balance">Balance: 0</div>
+  <header>
+    <div>
+      <div class="username" id="username">👤 User</div>
+      <div class="balance" id="balance">💰 Balance: 0</div>
+    </div>
+    <div class="top-controls">
+      <button class="icon-btn" id="deposit-btn" title="Deposit">
+        <i class="fas fa-wallet"></i>
+      </button>
+      <button class="icon-btn" onclick="logout()" title="Logout">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+  </header>
 
-  <div class="game-list">
-    <a href="/guess-room.html">Guess Number Order</a>
-    <a href="#">Chess</a>
-    <a href="#">LUDO</a>
-  </div>
-
-  <button class="logout-btn" onclick="logout()">Logout</button>
+  <main>
+    <h2>🎮 Available Games</h2>
+    <ul class="games-list">
+      <li><i class="fas fa-sort-numeric-up"></i> Guess Number Order</li>
+      <li><i class="fas fa-chess"></i> Chess</li>
+      <li><i class="fas fa-dice"></i> Ludo</li>
+    </ul>
+  </main>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCK1cWayLcccmgOmygFmW1otwlAPcrUSNw",
-      authDomain: "habeshagames-1f999.firebaseapp.com",
-      projectId: "habeshagames-1f999",
-      storageBucket: "habeshagames-1f999.appspot.com",
-      messagingSenderId: "919693990773",
-      appId: "1:919693990773:web:f32664a1b944b38101113c",
-      measurementId: "G-G5C67RMJDY"
+    const supabaseUrl = "https://evberyanshxxalxtwnnc.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const user = localStorage.getItem("user");
+    const phone = localStorage.getItem("phone");
+
+    if (!user || !phone) {
+      window.location.href = "index.html";
+    }
+
+    try {
+      const parsedUser = JSON.parse(user);
+      document.getElementById("username").textContent = `👤 ${parsedUser.username}`;
+      document.getElementById("balance").textContent = `💰 Balance: ${parsedUser.balance || 0}`;
+    } catch (e) {
+      console.error("Failed to parse user:", e);
+    }
+
+    // Make logout available globally
+    window.logout = function () {
+      localStorage.removeItem("user");
+      localStorage.removeItem("phone");
+      window.location.href = "index.html";
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function fetchBalance(userId) {
-      const userRef = doc(db, "users", userId);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) {
-        document.getElementById("balance").innerText = `Balance: ${docSnap.data().balance}`;
-      } else {
-        alert("User not found.");
-        logout();
-      }
-    }
-
-    function logout() {
-      localStorage.removeItem("userId");
-      window.location.href = "/index.html";
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('id') || localStorage.getItem("userId");
-
-    if (!userId) {
-      window.location.href = "/index.html";
-    } else {
-      localStorage.setItem("userId", userId);
-      fetchBalance(userId);
-    }
+    document.getElementById("deposit-btn").addEventListener("click", () => {
+      alert("Deposit flow coming soon!");
+    });
   </script>
 </body>
 </html>
