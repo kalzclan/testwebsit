@@ -72,6 +72,12 @@
       text-align: center;
       margin-top: 10px;
     }
+
+    .success {
+      color: #00ff99;
+      text-align: center;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -81,61 +87,115 @@
     <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" />
     <button id="register-btn">Register</button>
     <button class="logout" id="logout-btn">Logout</button>
-    <div id="error" class="error"></div>
+    <div id="message" class="error"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Initialize Supabase with demo credentials for testing
+    // Initialize Supabase with your credentials
     const supabaseUrl = 'https://evberyanshxxalxtwnnc.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-    
-    // Make available globally for testing
-    window.supabase = supabase;
-    
+
     document.addEventListener('DOMContentLoaded', async () => {
-      console.log("DOM fully loaded");
+      console.log('Supabase initialized:', supabase);
       
-      // For testing in this environment, we'll skip the user check
-      // and just show the form immediately
-      document.getElementById("register-form").style.display = "block";
-      
-      // Add event listeners
-      document.getElementById("register-btn").addEventListener("click", saveData);
-      document.getElementById("logout-btn").addEventListener("click", logout);
-      
-      // Mock the saveData function for demonstration
-      window.saveData = async function() {
-        const username = document.getElementById("username").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const errorDiv = document.getElementById("error");
-        
+      const registerForm = document.getElementById('register-form');
+      const registerBtn = document.getElementById('register-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+      const messageDiv = document.getElementById('message');
+
+      // Check for existing user session
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('phone', userId)
+            .single();
+
+          if (data) {
+            window.location.href = '/home.html?id=' + userId;
+            return;
+          } else {
+            localStorage.removeItem('userId');
+          }
+        } catch (error) {
+          console.error('Error checking user:', error);
+          showMessage('Error checking session', 'error');
+        }
+      }
+
+      // Event listeners
+      registerBtn.addEventListener('click', async () => {
+        const username = document.getElementById('username').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+
         if (!username || !phone) {
-          errorDiv.textContent = "Please fill in both fields";
+          showMessage('Please fill in both fields', 'error');
           return;
         }
-        
+
         if (!/^\d{10}$/.test(phone)) {
-          errorDiv.textContent = "Phone must be 10 digits";
+          showMessage('Phone must be 10 digits', 'error');
           return;
         }
-        
-        // Show success message (in a real app, this would be the Supabase call)
-        errorDiv.textContent = "Registration successful! (Demo)";
-        errorDiv.style.color = "#00ff99";
-        
-        // Reset form after 2 seconds
-        setTimeout(() => {
-          document.getElementById("username").value = "";
-          document.getElementById("phone").value = "";
-          errorDiv.textContent = "";
-        }, 2000);
-      };
-      
-      window.logout = function() {
-        alert("Logout clicked (demo)");
-      };
+
+        try {
+          // Check if user exists
+          const { data: existingUser, error: lookupError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('phone', phone)
+            .single();
+
+          if (existingUser) {
+            showMessage('Phone number already registered', 'error');
+            return;
+          }
+
+          // Create new user
+          const { data: newUser, error: insertError } = await supabase
+            .from('users')
+            .insert([
+              {
+                username: username,
+                phone: phone,
+                balance: 0,
+                created_at: new Date().toISOString()
+              }
+            ])
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+
+          localStorage.setItem('userId', phone);
+          showMessage('Registration successful! Redirecting...', 'success');
+          
+          // Simulate redirect for demo purposes
+          setTimeout(() => {
+            window.location.href = '/home.html?id=' + phone;
+          }, 1500);
+
+        } catch (error) {
+          console.error('Registration error:', error);
+          showMessage('Registration failed: ' + error.message, 'error');
+        }
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('userId');
+        showMessage('Logged out successfully', 'success');
+        // Refresh to show registration form again
+        setTimeout(() => location.reload(), 1000);
+      });
+
+      function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = type === 'error' ? 'error' : 'success';
+      }
     });
   </script>
 </body>
