@@ -19,13 +19,12 @@ const supabase = createClient(
   );
 
 // Initialize Socket.IO
-const socket = io('http://localhost:3000', {
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  timeout: 20000
+const socket = io({ // Call io() without the URL argument
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  timeout: 20000
 });
-
 // Game State
 const gameState = {
   playerColor: 'white', // This will be set from URL params
