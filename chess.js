@@ -34,8 +34,8 @@ const gameState = {
   currentGame: null,
   playerColor: 'white',
   gameCode: '',
-  apiBaseUrl: window.location.origin,
-  isConnected: false
+apiBaseUrl: 'https://my-chess-game-server.onrender.com',
+    isConnected: false
   
 };
 
