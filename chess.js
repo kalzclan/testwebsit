@@ -34,7 +34,7 @@ const gameState = {
   currentGame: null,
   playerColor: 'white',
   gameCode: '',
-  apiBaseUrl: 'http://localhost:3000',
+  apiBaseUrl: window.location.origin,
   isConnected: false
   
 };
