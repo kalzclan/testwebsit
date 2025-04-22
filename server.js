@@ -7,41 +7,50 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-// Configuration (replace these values with your own)
+// Configuration - Supabase keys remain hardcoded for now
+// Port and CORS Origin will read from Environment Variables in Render
 const config = {
-  supabaseUrl: 'https://evberyanshxxalxtwnnc.supabase.co',
-  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFseHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw',
-  port: 3000,
-  corsOrigin: 'http://localhost:1384'
+    supabaseUrl: 'https://evberyanshxxalxtwnnc.supabase.co', // Hardcoded as requested
+    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2YmVyeWFuc2h4eGFleHR3bm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODMwOTcsImV4cCI6MjA1OTY1OTA5N30.pEoPiIi78Tvl5URw0Xy_vAxsd-3XqRlC8FTnX9HpgMw', // Hardcoded as requested
+    // Removed hardcoded port
+    // Removed hardcoded corsOrigin
 };
+
+// Read PORT and CORS_ORIGIN from environment variables
+const PORT = process.env.PORT || 3000; // Use Render's PORT, fallback to 3000 for local dev
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:1384'; // Use env var for deployed origin, fallback for local dev
+
 
 // Middleware
 app.use(cors({
-  origin: config.corsOrigin,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+    origin: CORS_ORIGIN, // Use the dynamic origin variable
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(bodyParser.json());
 
 // Initialize Supabase
-const supabase = createClient(config.supabaseUrl, config.supabaseKey);
+const supabase = createClient(config.supabaseUrl, config.supabaseKey); // Still using hardcoded values
 
 // Create HTTP server
-const server = app.listen(config.port, () => {
-  console.log(`Server running on port ${config.port}`);
+// Listen on the PORT environment variable
+const server = app.listen(PORT, () => { // Use the dynamic PORT variable
+    console.log(`Server running on port ${PORT}`); // Log the correct port
 });
 
 // Initialize Socket.IO
 const io = new Server(server, {
-  cors: {
-    origin: config.corsOrigin,
-    methods: ["GET", "POST"]
-  },
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
-    skipMiddlewares: true
-  }
+    cors: {
+        origin: CORS_ORIGIN, // Use the dynamic origin variable
+        methods: ["GET", "POST"]
+    },
+    connectionStateRecovery: {
+        maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+        skipMiddlewares: true
+    }
 });
+
+// ... rest of your server code (Socket.IO connections, game logic, routes)
 
 // Game state management
 const gameTimers = {};
