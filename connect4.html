@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four - Multiplayer</title>
+    <link rel="stylesheet" href="connect4.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <header class="game-header">
+            <button id="back-btn" class="back-btn">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="game-info">
+                <div class="game-code">
+                    <span>Game Code: </span>
+                    <span id="game-code-display"></span>
+                    <button id="copy-code-btn" class="copy-btn">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2" fill="none"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="bet-amount">
+                    Prize Pool: <span id="game-bet-amount">0 ETB</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Players Section -->
+        <section class="players-section">
+            <div class="player-card creator">
+                <div class="player-avatar" id="creator-avatar">C</div>
+                <div class="player-info">
+                    <div class="player-name" id="creator-username">Creator</div>
+                    <div class="player-status" id="creator-status">Waiting</div>
+                    <div class="player-piece red"></div>
+                </div>
+            </div>
+            
+            <div class="vs-indicator">VS</div>
+            
+            <div class="player-card opponent">
+                <div class="player-avatar" id="opponent-avatar">O</div>
+                <div class="player-info">
+                    <div class="player-name" id="opponent-username">Waiting...</div>
+                    <div class="player-status" id="opponent-status">Waiting</div>
+                    <div class="player-piece yellow"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Game Status -->
+        <div class="game-status">
+            <div id="game-status-message" class="status-message info">Waiting for opponent...</div>
+            <div id="current-turn-indicator" class="turn-indicator" style="display: none;">
+                <span id="turn-player-name">Your</span> turn
+                <div class="turn-piece" id="turn-piece"></div>
+            </div>
+        </div>
+
+        <!-- Connect Four Board -->
+        <div class="board-container">
+            <div id="connect-four-board" class="connect-four-board">
+                <!-- Column buttons for dropping pieces -->
+                <div class="column-buttons">
+                    <button class="column-btn" data-column="0"></button>
+                    <button class="column-btn" data-column="1"></button>
+                    <button class="column-btn" data-column="2"></button>
+                    <button class="column-btn" data-column="3"></button>
+                    <button class="column-btn" data-column="4"></button>
+                    <button class="column-btn" data-column="5"></button>
+                    <button class="column-btn" data-column="6"></button>
+                </div>
+                
+                <!-- Game grid -->
+                <div class="game-grid">
+                    <!-- 6 rows x 7 columns = 42 cells -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Actions -->
+        <div class="game-actions">
+            <button id="leave-game-btn" class="leave-btn">Leave Game</button>
+        </div>
+    </div>
+
+    <!-- Game Result Modal -->
+    <div id="game-result-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="result-title">Game Over</h2>
+                <button id="modal-close-btn" class="modal-close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="result-message">Game result message</p>
+                <div id="result-amount" class="result-amount">+0 ETB</div>
+            </div>
+            <div class="modal-footer">
+                <button id="watch-game-btn" class="watch-btn" style="display: none;">Watch Game</button>
+                <button id="result-close-btn" class="modal-btn primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <script type="module" src="connect4.js"></script>
+</body>
+</html>
